@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherPrompt — Zero-Shot Prompt Engineering Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #09090b; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        
+        /* Acrylic Material */
+        .acrylic {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px) saturate(1.5);
+            -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        }
+        .acrylic-strong {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(40px) saturate(1.8);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8);
+        }
+
+        /* Selection Cards */
+        .opt-card {
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .opt-card:hover {
+            background: rgba(255,255,255,0.06);
+        }
+        .opt-card.active {
+            background: rgba(145, 65, 172, 0.15);
+            border-color: rgba(145, 65, 172, 0.5);
+        }
+
+        /* Floating Dock */
+        .dock-icon {
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dock-icon:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        .dock-icon.active {
+            background: rgba(145, 65, 172, 0.2);
+            color: #c084fc; /* purple-400 */
+        }
+        .dock-icon.active svg { stroke: #c084fc; }
+
+        /* Output Markdown */
+        .output-markdown {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Subtle Ambient Glow */
+        .ambient-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 9999px;
+            filter: blur(120px);
+            opacity: 0.07;
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-300 antialiased h-screen overflow-hidden flex relative">
+
+    <!-- Ambient Background Glows -->
+    <div class="ambient-glow bg-[#9141AC] top-[-10%] left-[-5%]"></div>
+    <div class="ambient-glow bg-[#06B6D4] bottom-[-15%] right-[-10%]"></div>
+
+    <!-- Floating Sidebar Dock -->
+    <aside class="w-20 h-full flex flex-col items-center py-8 z-20 flex-shrink-0">
+        <div class="acrylic-strong border border-white/10 rounded-2xl p-2 flex flex-col items-center gap-2">
+            <button onclick="setStep(1)" class="dock-icon active p-3 rounded-xl border border-transparent" data-step="1" title="Core Stack">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            </button>
+            <button onclick="setStep(2)" class="dock-icon p-3 rounded-xl border border-transparent" data-step="2" title="Identity & Vibe">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+            </button>
+            <button onclick="setStep(3)" class="dock-icon p-3 rounded-xl border border-transparent" data-step="3" title="Color & Material">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="10.5" r="2.5"></circle><circle cx="8.5" cy="7.5" r="2.5"></circle><circle cx="6.5" cy="12.5" r="2.5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
+            </button>
+            <button onclick="setStep(4)" class="dock-icon p-3 rounded-xl border border-transparent" data-step="4" title="Navigation & Layout">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </button>
+            
+            <div class="w-6 h-px bg-white/10 my-1"></div>
+            
+            <button onclick="generateOutput()" class="dock-icon p-3 rounded-xl border border-transparent text-cyan-400 hover:bg-[#06B6D4]/10" title="Compile Prompt">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto flex flex-col items-center justify-start py-12 px-4 relative z-10">
+        
+        <!-- Header -->
+        <header class="w-full max-w-3xl mb-12 flex items-end justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-2 h-2 rounded-full bg-[#9141AC]"></div>
+                    <span class="text-xs font-medium tracking-widest uppercase text-slate-500">System v1.0</span>
+                </div>
+                <h1 class="text-3xl font-semibold text-white tracking-tight">AetherPrompt</h1>
+                <p class="text-slate-500 text-sm mt-1">Zero-shot prompt engineering engine for UI generation.</p>
+            </div>
+            <div id="step-indicator" class="text-xs font-mono text-slate-600">01 / 04</div>
+        </header>
+
+        <!-- Configuration Container -->
+        <div id="config-container" class="w-full max-w-3xl mb-24">
+            <!-- Steps injected via JS -->
+        </div>
+
+    </main>
+
+    <!-- Output Overlay -->
+    <div id="output-overlay" class="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-xl hidden flex items-center justify-center p-8">
+        <div class="w-full max-w-4xl h-full max-h-[800px] flex flex-col acrylic-strong border border-white/10 rounded-3xl overflow-hidden">
+            <div class="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                <div>
+                    <h2 class="text-lg font-medium text-white">Compiled System Role</h2>
+                    <p class="text-sm text-slate-500 mt-1">Copy the markdown below to instruct your LLM.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="copyOutput()" id="copy-btn" class="text-xs px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">Copy Markdown</button>
+                    <button onclick="closeOutput()" class="text-xs px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">Close</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-8">
+                <pre id="output-content" class="output-markdown text-slate-300 whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        const state = {
+            step: 1,
+            config: {
+                // Step 1
+                framework: 'html-css',
+                audience: 'creatives',
+                // Step 2
+                archetype: 'high-tech',
+                flavor: 'corporate',
+                emotion: 'calm',
+                typography: 'sans',
+                // Step 3
+                primaryHex: '#9141AC',
+                secondaryHex: '#06B6D4',
+                harmony: 'monochromatic',
+                neutrals: 'slate',
+                contrast: 'aa',
+                semantics: 'pastels',
+                surfaceBase: 'zinc',
+                surfaceMaterial: 'acrylic',
+                elevation: 'flat',
+                borders: 'hairline',
+                // Step 4
+                navigation: 'dock',
+                grid: 'center'
+            }
+        };
+
+        // Compatibility Engine Data
+        const flavorMap = {
+            'high-tech': ['Corporate Clean', 'Modern App Tech', 'Web3/Crypto'],
+            'corporate': ['High-Tech', 'Minimalist', 'Academic'],
+            'luxury': ['Minimalist', 'Corporate', 'Editorial'],
+            'web3': ['High-Tech', 'Playful', 'Glitch Art'],
+            'playful': ['Web3', 'Retro', 'Corporate'],
+            'academic': ['Corporate', 'High-Tech', 'Minimalist']
+        };
+
+        // --- RENDERING ENGINE ---
+        function render() {
+            const container = document.getElementById('config-container');
+            const stepIndicator = document.getElementById('step-indicator');
+            stepIndicator.textContent = `0${state.step} / 04`;
+
+            // Update Dock
+            document.querySelectorAll('.dock-icon[data-step]').forEach(btn => {
+                if (parseInt(btn.dataset.step) === state.step) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            let html = '';
+            switch(state.step) {
+                case 1: html = renderStep1(); break;
+                case 2: html = renderStep2(); break;
+                case 3: html = renderStep3(); break;
+                case 4: html = renderStep4(); break;
+            }
+            container.innerHTML = html;
+        }
+
+        function cardGroup(options, selectedValue, stateKey, cols='grid-cols-2') {
+            return `<div class="grid ${cols} gap-3">
+                ${options.map(opt => `
+                    <div onclick="selectOption('${stateKey}', '${opt.value}')" 
+                         class="opt-card p-4 rounded-xl border border-white/10 cursor-pointer flex items-start gap-3 ${state.config[stateKey] === opt.value ? 'active' : ''}">
+                        <div class="w-5 h-5 mt-0.5 rounded-full border ${state.config[stateKey] === opt.value ? 'border-[#9141AC] bg-[#9141AC]/20' : 'border-white/20'} flex items-center justify-center flex-shrink-0">
+                            ${state.config[stateKey] === opt.value ? '<div class="w-2 h-2 rounded-full bg-[#c084fc]"></div>' : ''}
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-white">${opt.label}</div>
+                            <div class="text-xs text-slate-500 mt-1 leading-relaxed">${opt.desc}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function sectionHeader(title, desc) {
+            return `<div class="mb-6">
+                <h3 class="text-xl font-semibold text-white mb-1">${title}</h3>
+                <p class="text-sm text-slate-500">${desc}</p>
+            </div>`;
+        }
+
+        function stepNavigation(showPrev=true) {
+            return `<div class="flex items-center justify-between mt-12 pt-6 border-t border-white/5">
+                ${showPrev ? `<button onclick="prevStep()" class="text-sm px-5 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">Back</button>` : '<div></div>'}
+                <button onclick="nextStep()" class="text-sm px-5 py-2.5 rounded-lg bg-[#9141AC] text-white hover:bg-[#9141AC]/80 transition-colors">Continue</button>
+            </div>`;
+        }
+
+        // Step 1: Core Stack
+        function renderStep1() {
+            const frameworks = [
+                { value: 'react', label: 'React 19', desc: 'TSX, Functional Hooks, Strict Typing' },
+                { value: 'svelte', label: 'SvelteKit 2.0', desc: 'Svelte 5 Runes, Reactive Compiler' },
+                { value: 'vue', label: 'Vue 3', desc: 'Composition API, Reactive Refs' },
+                { value: 'html-css', label: 'Pure HTML/CSS', desc: 'Semantic HTML5, Custom Properties' }
+            ];
+            const audiences = [
+                { value: 'developers', label: 'Developers & Engineers', desc: 'Data density, keyboard-centric' },
+                { value: 'enterprise', label: 'Enterprise Executives', desc: 'High-level KPI, clean charts' },
+                { value: 'gen-z', label: 'Gen-Z Consumers', desc: 'Mobile-first, gamification' },
+                { value: 'creatives', label: 'Creatives & Designers', desc: 'Pixel-perfect, experimental layouts' }
+            ];
+            return `
+                ${sectionHeader('Core Stack & Audience', 'Define the foundational technology and the intended end-user.')}
+                <div class="space-y-8">
+                    <div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Framework</div>
+                        ${cardGroup(frameworks, state.config.framework, 'framework')}
+                    </div>
+                    <div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Target Audience</div>
+                        ${cardGroup(audiences, state.config.audience, 'audience')}
+                    </div>
+                </div>
+                ${stepNavigation(false)}
+            `;
+        }
+
+        // Step 2: Identity
+        function renderStep2() {
+            const archetypes = [
+                { value: 'high-tech', label: 'High-Tech', desc: 'Developer-first, exposed components' },
+                { value: 'corporate', label: 'Corporate Clean', desc: 'Structured, conventional, maximum trust' },
+                { value: 'luxury', label: 'Ultra-Premium', desc: 'Vast spacing, elegant serifs, stark contrast' },
+                { value: 'web3', label: 'Web3 / Avant-Garde', desc: 'Dark mode, neon glows, brutalism' },
+                { value: 'playful', label: 'Playful & Quirky', desc: 'Organic shapes, bright pastels' },
+                { value: 'academic', label: 'Academic / Research', desc: 'Dense typography, minimal chrome' }
+            ];
+            
+            const flavors = flavorMap[state.config.archetype].map(f => {
+                return { value: f.toLowerCase().split(/[ /]+/)[0], label: f, desc: 'Secondary injection' };
+            });
+            // Auto-select first flavor if current is invalid
+            if (!flavors.find(f => f.value === state.config.flavor)) {
+                state.config.flavor = flavors[0].value;
+            }
+
+            const emotions = [
+                { value: 'stable', label: 'Secure & Stable', desc: 'Predictable, grounded UI' },
+                { value: 'bold', label: 'High-Energy', desc: 'Bold, urgent contrasts' },
+                { value: 'calm', label: 'Calm & Minimal', desc: 'Soft contrast, vast negative space' },
+                { value: 'edgy', label: 'Edgy & Disruptive', desc: 'Asymmetric, unconventional' }
+            ];
+
+            const typo = [
+                { value: 'sans', label: 'Modern Sans-Serif', desc: 'Clean, highly legible' },
+                { value: 'serif', label: 'Elegant Serif', desc: 'Classic, editorial' },
+                { value: 'mono', label: 'Strict Monospace', desc: 'Technical, tabular' },
+                { value: 'mixed', label: 'Mixed', desc: 'Serif headers, Sans body' }
+            ];
+
+            return `
+                ${sectionHeader('Identity & Vibe Engine', 'Establish the emotional and visual soul of the application.')}
+                <div class="space-y-8">
+                    <div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Base Archetype</div>
+                        ${cardGroup(archetypes, state.config.archetype, 'archetype', 'grid-cols-3')}
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500">Flavor Mix</div>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#06B6D4]/10 text-[#06B6D4]">Compatibility Engine Active</span>
+                        </div>
+                        ${cardGroup(flavors, state.config.flavor, 'flavor', flavors.length <= 3 ? `grid-cols-${flavors.length}` : 'grid-cols-3')}
+                    </div>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Core Emotion</div>
+                            ${cardGroup(emotions, state.config.emotion, 'emotion')}
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Typography</div>
+                            ${cardGroup(typo, state.config.typography, 'typography')}
+                        </div>
+                    </div>
+                </div>
+                ${stepNavigation()}
+            `;
+        }
+
+        // Step 3: Color & Material
+        function renderStep3() {
+            const miniSelect = (label, options, stateKey) => `
+                <div>
+                    <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">${label}</div>
+                    <div class="flex flex-wrap gap-2">
+                        ${options.map(opt => `
+                            <button onclick="selectOption('${stateKey}', '${opt.value}')" 
+                                    class="text-xs px-3 py-1.5 rounded-lg border transition-colors ${state.config[stateKey] === opt.value ? 'bg-[#9141AC]/20 border-[#9141AC]/50 text-[#c084fc]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}">
+                                ${opt.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            const harmonies = [
+                {value: 'monochromatic', label: 'Monochromatic'},
+                {value: 'analogous', label: 'Analogous'},
+                {value: 'complementary', label: 'Complementary'},
+                {value: 'split', label: 'Split-Compl.'}
+            ];
+            const neutrals = [
+                {value: 'slate', label: 'Slate (Cool)'},
+                {value: 'zinc', label: 'Zinc (Tech)'},
+                {value: 'neutral', label: 'Neutral (Pure)'},
+                {value: 'stone', label: 'Stone (Warm)'}
+            ];
+            const contrasts = [
+                {value: 'aa', label: 'WCAG AA'},
+                {value: 'aaa', label: 'WCAG AAA'},
+                {value: 'edge', label: 'Edge Mode'},
+                {value: 'subdued', label: 'Aesthetic'}
+            ];
+            const semantics = [
+                {value: 'vivid', label: 'Vivid'},
+                {value: 'pastels', label: 'Muted Pastels'},
+                {value: 'neon', label: 'Neon'},
+                {value: 'mono', label: 'Monochrome'}
+            ];
+            const bases = [
+                {value: 'oled', label: 'Pitch OLED'},
+                {value: 'zinc', label: 'Deep Zinc'},
+                {value: 'navy', label: 'Midnight Navy'}
+            ];
+            const materials = [
+                {value: 'matte', label: 'Opaque Matte'},
+                {value: 'glass', label: 'Glassmorphism'},
+                {value: 'acrylic', label: 'Sat. Acrylic'},
+                {value: 'ghost', label: 'Wireframe'}
+            ];
+            const elevations = [
+                {value: 'ambient', label: 'Ambient'},
+                {value: 'hard', label: 'Hard Offset'},
+                {value: 'neon', label: 'Neon Glow'},
+                {value: 'material', label: 'Material'},
+                {value: 'flat', label: 'Flat UI'}
+            ];
+            const borders = [
+                {value: 'hairline', label: 'Hairline'},
+                {value: 'thick', label: 'Thick'},
+                {value: 'gradient', label: 'Gradient'},
+                {value: 'none', label: 'Borderless'}
+            ];
+
+            return `
+                ${sectionHeader('Color & Material Depth', 'Define exact rendering physics and volumetric instructions.')}
+                <div class="space-y-8">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Primary Hex</div>
+                            <div class="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg p-2">
+                                <input type="color" value="${state.config.primaryHex}" onchange="state.config.primaryHex=this.value; render();" class="w-8 h-8 rounded cursor-pointer bg-transparent border-none outline-none" />
+                                <input type="text" value="${state.config.primaryHex}" oninput="state.config.primaryHex=this.value; render();" class="bg-transparent text-white font-mono text-sm flex-1 outline-none" />
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Secondary / Glow Hex</div>
+                            <div class="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg p-2">
+                                <input type="color" value="${state.config.secondaryHex}" onchange="state.config.secondaryHex=this.value; render();" class="w-8 h-8 rounded cursor-pointer bg-transparent border-none outline-none" />
+                                <input type="text" value="${state.config.secondaryHex}" oninput="state.config.secondaryHex=this.value; render();" class="bg-transparent text-white font-mono text-sm flex-1 outline-none" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        ${miniSelect('Harmony Model', harmonies, 'harmony')}
+                        ${miniSelect('Neutral Scale', neutrals, 'neutrals')}
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        ${miniSelect('Contrast Target', contrasts, 'contrast')}
+                        ${miniSelect('Semantic States', semantics, 'semantics')}
+                    </div>
+
+                    <div class="border-t border-white/5 pt-8">
+                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-6">Material Physics</div>
+                        <div class="space-y-6">
+                            ${miniSelect('Dark Mode Surface Base', bases, 'surfaceBase')}
+                            ${miniSelect('Surface Material', materials, 'surfaceMaterial')}
+                            ${miniSelect('Elevation Paradigm', elevations, 'elevation')}
+                            ${miniSelect('Border Execution', borders, 'borders')}
+                        </div>
+                    </div>
+                </div>
+                ${stepNavigation()}
+            `;
+        }
+
+        // Step 4: Layout
+        function renderStep4() {
+            const navs = [
+                { value: 'island', label: 'Dynamic Island', desc: 'Floating expanding pill' },
+                { value: 'cmdk', label: 'Zero-Nav / Cmd+K', desc: 'Search palette only' },
+                { value: 'dock', label: 'Sidebar Dock', desc: 'Floating icon rail' },
+                { value: 'sticky', label: 'Sticky Glassmorphic', desc: 'Standard blurred header' }
+            ];
+            const grids = [
+                { value: 'bento', label: 'Bento Box', desc: 'Asymmetric widget grid' },
+                { value: 'split', label: '50/50 Split', desc: 'Workstation layout' },
+                { value: 'center', label: 'Center Column', desc: 'Focused reading' },
+                { value: 'dense', label: 'Dense Dashboard', desc: 'Multi-panel data' }
+            ];
+
+            return `
+                ${sectionHeader('Navigation & Layout', 'Dictate the macro-structure and traversal paradigms.')}
+                <div class="space-y-8">
+                    <div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Navigation</div>
+                        ${cardGroup(navs, state.config.navigation, 'navigation')}
+                    </div>
+                    <div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Content Grid</div>
+                        ${cardGroup(grids, state.config.grid, 'grid')}
+                    </div>
+                </div>
+                ${stepNavigation()}
+            `;
+        }
+
+        // --- ACTIONS ---
+        function selectOption(key, value) {
+            state.config[key] = value;
+            // Trigger compatibility engine for archetype
+            if (key === 'archetype') {
+                const flavors = flavorMap[value].map(f => f.toLowerCase().split(/[ /]+/)[0]);
+                if (!flavors.includes(state.config.flavor)) {
+                    state.config.flavor = flavors[0];
+                }
+            }
+            render();
+        }
+
+        function setStep(step) {
+            state.step = step;
+            render();
+        }
+
+        function nextStep() {
+            if (state.step < 4) {
+                state.step++;
+                render();
+                document.getElementById('config-container').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function prevStep() {
+            if (state.step > 1) {
+                state.step--;
+                render();
+                document.getElementById('config-container').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function generateOutput() {
+            const c = state.config;
+            
+            const frameworkMap = {
+                'react': 'React 19 (TSX, Functional Hooks)',
+                'svelte': 'SvelteKit 2.0 (Svelte 5 Runes)',
+                'vue': 'Vue 3 (Composition API)',
+                'html-css': 'Pure Semantic HTML5 + Custom CSS'
+            };
+
+            const audienceMap = {
+                'developers': 'Developers & Engineers (Prioritizes extreme data density and keyboard-centric navigation)',
+                'enterprise': 'Enterprise Executives (Prioritizes high-level KPI summaries and clean charts)',
+                'gen-z': 'General Consumers / Gen-Z (Prioritizes mobile-first thumb zones and gamification)',
+                'creatives': 'Creatives & Designers (Prioritizes pixel-perfect alignment and experimental layouts)'
+            };
+
+            const archetypeMap = {
+                'high-tech': 'High-Tech & Developer-First',
+                'corporate': 'Corporate Clean & Trustworthy',
+                'luxury': 'Ultra-Premium & Luxury',
+                'web3': 'Web3/Crypto Avant-Garde',
+                'playful': 'Playful & Quirky',
+                'academic': 'Academic/Research-Heavy'
+            };
+
+            const flavorMapFull = {
+                'corporate': 'Corporate Clean',
+                'modern': 'Modern App Tech',
+                'web3': 'Web3/Crypto',
+                'minimalist': 'Minimalist',
+                'academic': 'Academic',
+                'editorial': 'Editorial',
+                'high-tech': 'High-Tech',
+                'glitch': 'Glitch Art',
+                'playful': 'Playful',
+                'retro': 'Retro'
+            };
+
+            const emotionMap = {
+                'stable': 'Secure & Stable',
+                'bold': 'High-Energy & Bold',
+                'calm': 'Calm & Minimal',
+                'edgy': 'Edgy & Disruptive'
+            };
+
+            const typoMap = {
+                'sans': 'Modern Sans-Serif',
+                'serif': 'Elegant Serif',
+                'mono': 'Strict Monospace',
+                'mixed': 'Mixed (Serif headers, Sans body)'
+            };
+
+            const harmonyMap = { 'monochromatic': 'Monochromatic', 'analogous': 'Analogous', 'complementary': 'Complementary', 'split': 'Split-Complementary' };
+            const neutralsMap = { 'slate': 'Slate (Cool, blue-tinted grays)', 'zinc': 'Zinc (Standard Tech)', 'neutral': 'Neutral (Pure Grayscale)', 'stone': 'Stone (Warm/Earthy)' };
+            const contrastMap = { 'aa': 'WCAG AA (4.5:1)', 'aaa': 'WCAG AAA (7:1)', 'edge': 'High Contrast Edge Mode', 'subdued': 'Aesthetic Subdued' };
+            const semanticsMap = { 'vivid': 'Vivid Standard (R/G/Y)', 'pastels': 'Muted Pastels', 'neon': 'Neon High-Vis', 'mono': 'Strict Monochrome' };
+            const surfaceBaseMap = { 'oled': 'Pitch Black OLED', 'zinc': 'Deep Zinc', 'navy': 'Midnight Navy' };
+            const materialMap = { 'matte': 'Opaque Matte', 'glass': 'Glassmorphism (backdrop-blur)', 'acrylic': 'Saturated Acrylic (Heavy backdrop-blur + saturate-150)', 'ghost': 'Wireframe/Ghost' };
+            const elevationMap = { 'ambient': 'Soft Ambient Diffusion (Apple UX)', 'hard': 'Hard Solid Offset (Neo-brutalism)', 'neon': 'Colored Neon Glows', 'material': 'Strict Material Elevation', 'flat': 'Flat UI (Absolutely no box-shadow properties)' };
+            const bordersMap = { 'hairline': 'Hairline Translucent (1px, highly transparent white borders like border-white/10)', 'thick': 'Thick Structural', 'gradient': 'Gradient Strokes', 'none': 'Strictly Borderless' };
+            const navMap = { 'island': 'Apple Dynamic Island (Floating expanding pill)', 'cmdk': 'Zero-Nav / Cmd+K Driven (Search palette only)', 'dock': 'Floating Icon Sidebar Dock', 'sticky': 'Standard Sticky Glassmorphic Header' };
+            const gridMap = { 'bento': 'Asymmetric Bento Box Grid', 'split': '50/50 Split Screen Workstation', 'center': 'Center-Focused Reading Column', 'dense': 'Dense Multi-panel Dashboard' };
+
+            const markdown = `<system_role>
+You are an Elite UI/UX Architect and Staff-level Frontend Developer. Generate a production-ready, highly polished web component adhering strictly to the volumetric design tokens below. Do not hallucinate external assets.
+</system_role>
+
+### 1. IDENTITY & PERSONA
+- Base Visual Archetype: ${archetypeMap[c.archetype]}. 
+- Flavor Injection: Blend subtle elements of "${flavorMapFull[c.flavor]} interface."
+- Core Emotional Resonance: ${emotionMap[c.emotion]}.
+- Target Audience Profile: ${audienceMap[c.audience]}.
+- Typography Strategy: ${typoMap[c.typography]}
+
+### 2. COLOR ENGINE & HARMONY
+- Palette Root: Primary: ${c.primaryHex} | Secondary/Glow: ${c.secondaryHex}
+- Harmony Strategy: ${harmonyMap[c.harmony]} (Pure shades/tints of the primary hex).
+- Neutral/Grayscale Scale: ${neutralsMap[c.neutrals]}.
+- Semantic States (Feedback): ${semanticsMap[c.semantics]}.
+- Accessibility Target: ${contrastMap[c.contrast]}.
+
+Constraint: Extrapolate opacities and hover states natively using Tailwind arbitrary values based on the exact hex codes provided (e.g., bg-[${c.primaryHex}]/20).
+
+### 3. MATERIAL PHYSICS & DEPTH ELEVATION
+- Dark Mode Surface Root: ${surfaceBaseMap[c.surfaceBase]}.
+- Surface Material & Textures: ${materialMap[c.surfaceMaterial]}.
+- Shadow & Elevation Paradigm: ${elevationMap[c.elevation]}.
+- Border Execution Strategy: ${bordersMap[c.borders]}.
+
+Constraint: Execute the shadow and border constraints strictly. If "Flat UI" or "Borderless" is requested, rely entirely on padding and background tint shifts for component hierarchy.
+
+### 4. LAYOUT & TECHNICAL SPECS
+- Framework: ${frameworkMap[c.framework]}
+- Navigational Architecture: ${navMap[c.navigation]}
+- Content Grid Strategy: ${gridMap[c.grid]}
+- Interactivity: Embed realistic client-side mock state logic so the UI is interactive.
+- Output: A single-file implementation inside a markdown code block.`;
+
+            document.getElementById('output-content').textContent = markdown;
+            document.getElementById('output-overlay').classList.remove('hidden');
+            document.getElementById('output-overlay').classList.add('flex');
+        }
+
+        function closeOutput() {
+            document.getElementById('output-overlay').classList.add('hidden');
+            document.getElementById('output-overlay').classList.remove('flex');
+        }
+
+        function copyOutput() {
+            const text = document.getElementById('output-content').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy Markdown'; }, 2000);
+            });
+        }
+
+        // Initial Render
+        render();
+    </script>
+</body>
+</html>
