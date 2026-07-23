@@ -26,7 +26,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-        
+
         /* Acrylic Material */
         .acrylic {
             background: rgba(255, 255, 255, 0.03);
@@ -105,9 +105,9 @@
             <button onclick="setStep(4)" class="dock-icon p-3 rounded-xl border border-transparent" data-step="4" title="Navigation & Layout">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </button>
-            
+
             <div class="w-6 h-px bg-white/10 my-1"></div>
-            
+
             <button onclick="generateOutput()" class="dock-icon p-3 rounded-xl border border-transparent text-cyan-400 hover:bg-[#06B6D4]/10" title="Compile Prompt">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
             </button>
@@ -116,7 +116,7 @@
 
     <!-- Main Content Area -->
     <main class="flex-1 h-full overflow-y-auto flex flex-col items-center justify-start py-12 px-4 relative z-10">
-        
+
         <!-- Header -->
         <header class="w-full max-w-3xl mb-12 flex items-end justify-between">
             <div>
@@ -224,7 +224,7 @@
         function cardGroup(options, selectedValue, stateKey, cols='grid-cols-2') {
             return `<div class="grid ${cols} gap-3">
                 ${options.map(opt => `
-                    <div onclick="selectOption('${stateKey}', '${opt.value}')" 
+                    <div onclick="selectOption('${stateKey}', '${opt.value}')"
                          class="opt-card p-4 rounded-xl border border-white/10 cursor-pointer flex items-start gap-3 ${state.config[stateKey] === opt.value ? 'active' : ''}">
                         <div class="w-5 h-5 mt-0.5 rounded-full border ${state.config[stateKey] === opt.value ? 'border-[#9141AC] bg-[#9141AC]/20' : 'border-white/20'} flex items-center justify-center flex-shrink-0">
                             ${state.config[stateKey] === opt.value ? '<div class="w-2 h-2 rounded-full bg-[#c084fc]"></div>' : ''}
@@ -292,7 +292,7 @@
                 { value: 'playful', label: 'Playful & Quirky', desc: 'Organic shapes, bright pastels' },
                 { value: 'academic', label: 'Academic / Research', desc: 'Dense typography, minimal chrome' }
             ];
-            
+
             const flavors = flavorMap[state.config.archetype].map(f => {
                 return { value: f.toLowerCase().split(/[ /]+/)[0], label: f, desc: 'Secondary injection' };
             });
@@ -351,7 +351,7 @@
                     <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">${label}</div>
                     <div class="flex flex-wrap gap-2">
                         ${options.map(opt => `
-                            <button onclick="selectOption('${stateKey}', '${opt.value}')" 
+                            <button onclick="selectOption('${stateKey}', '${opt.value}')"
                                     class="text-xs px-3 py-1.5 rounded-lg border transition-colors ${state.config[stateKey] === opt.value ? 'bg-[#9141AC]/20 border-[#9141AC]/50 text-[#c084fc]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}">
                                 ${opt.label}
                             </button>
@@ -428,7 +428,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-2 gap-6">
                         ${miniSelect('Harmony Model', harmonies, 'harmony')}
                         ${miniSelect('Neutral Scale', neutrals, 'neutrals')}
@@ -520,7 +520,7 @@
 
         function generateOutput() {
             const c = state.config;
-            
+
             const frameworkMap = {
                 'react': 'React 19 (TSX, Functional Hooks)',
                 'svelte': 'SvelteKit 2.0 (Svelte 5 Runes)',
@@ -536,12 +536,12 @@
             };
 
             const archetypeMap = {
-                'high-tech': 'High-Tech & Developer-First',
-                'corporate': 'Corporate Clean & Trustworthy',
-                'luxury': 'Ultra-Premium & Luxury',
-                'web3': 'Web3/Crypto Avant-Garde',
-                'playful': 'Playful & Quirky',
-                'academic': 'Academic/Research-Heavy'
+                'high-tech': 'High-Tech & Developer-First interface. Draw inspiration from tiling window managers, IDEs, and CLI environments. Utilize strict grid alignments, exposed structural borders, and dense monospaced telemetry data. Prioritize function, keyboard-navigability, and raw utility over decorative flourishes. The visual language should feel like a native, high-performance developer tool with visible state indicators and highly structured data panes.',
+                'corporate': 'Corporate Clean interface. Establish absolute user trust through conventional, highly predictable UX patterns. Utilize balanced, symmetrical layouts, clear visual hierarchies, and stark contrast. Components should feel robust, fully accessible, and modular. The design language must echo enterprise-grade dashboards—prioritizing clarity, compliance, and frictionless user flows over experimental aesthetics.',
+                'luxury': 'Ultra-Premium & Luxury interface. Embrace vast negative space and deliberate, editorial pacing. Use delicate hairline dividers, slow cinematic transitions, and precise, highly intentional typographic scales. The UI should feel curated, bespoke, and quiet, requiring the user to slow down and appreciate the content. Avoid overwhelming data density in favor of high-impact, singular focal points.',
+                'web3': 'Web3 & Crypto Avant-Garde interface. Push modern browser capabilities with dark-mode native aesthetics. Incorporate hardware-accelerated floating elements, deeply saturated neon glows against pitch-black canvases, and frosted glass panels. The layout should feel decentralized, cutting-edge, and highly spatial, blending complex financial data visualization with immersive, high-tech branding.',
+                'playful': 'Playful, Quirky & Approachable interface. Break the rigidity of standard grids with organic shapes, bouncy micro-interactions, and asymmetric layouts. Utilize bold, slightly exaggerated UI elements, soft geometry, and gamified feedback states. The interface should feel alive, friendly, and inherently tactile, prioritizing user delight and engagement without sacrificing core usability.',
+                'academic': 'Academic & Research-Heavy interface. Focus ruthlessly on legibility and information architecture. Draw inspiration from rigorous typesetting, LaTeX documents, and scientific journals. Utilize dense, highly structured data tables, strict center-focused reading columns, and subtle footnote/citation patterns. The design must elegantly handle massive text and data density without inducing cognitive overload.'
             };
 
             const flavorMapFull = {
@@ -587,28 +587,28 @@ You are an Elite UI/UX Architect and Staff-level Frontend Developer. Generate a 
 </system_role>
 
 ### 1. IDENTITY & PERSONA
-- Base Visual Archetype: ${archetypeMap[c.archetype]}. 
-- Flavor Injection: Blend subtle elements of "${flavorMapFull[c.flavor]} interface."
-- Core Emotional Resonance: ${emotionMap[c.emotion]}.
-- Target Audience Profile: ${audienceMap[c.audience]}.
+- Base Visual Archetype: ${archetypeMap[c.archetype]}
+- Flavor Injection: Blend in subtle elements of "${flavorMapFull[c.flavor]}".
+- Core Emotional Resonance: ${emotionMap[c.emotion]}
+- Target Audience Profile: ${audienceMap[c.audience]}
 - Typography Strategy: ${typoMap[c.typography]}
 
 ### 2. COLOR ENGINE & HARMONY
 - Palette Root: Primary: ${c.primaryHex} | Secondary/Glow: ${c.secondaryHex}
-- Harmony Strategy: ${harmonyMap[c.harmony]} (Pure shades/tints of the primary hex).
-- Neutral/Grayscale Scale: ${neutralsMap[c.neutrals]}.
-- Semantic States (Feedback): ${semanticsMap[c.semantics]}.
-- Accessibility Target: ${contrastMap[c.contrast]}.
+- Harmony Strategy: ${harmonyMap[c.harmony]}
+- Neutral/Grayscale Scale: ${neutralsMap[c.neutrals]}
+- Semantic States (Feedback): ${semanticsMap[c.semantics]}
+- Accessibility Target: ${contrastMap[c.contrast]}
 
-Constraint: Extrapolate opacities and hover states natively using Tailwind arbitrary values based on the exact hex codes provided (e.g., bg-[${c.primaryHex}]/20).
+> Constraint: Extrapolate opacities and hover states natively using Tailwind arbitrary values based on the exact hex codes provided (e.g., bg-[${c.primaryHex}]/20).
 
 ### 3. MATERIAL PHYSICS & DEPTH ELEVATION
-- Dark Mode Surface Root: ${surfaceBaseMap[c.surfaceBase]}.
-- Surface Material & Textures: ${materialMap[c.surfaceMaterial]}.
-- Shadow & Elevation Paradigm: ${elevationMap[c.elevation]}.
-- Border Execution Strategy: ${bordersMap[c.borders]}.
+- Dark Mode Surface Root: ${surfaceBaseMap[c.surfaceBase]}
+- Surface Material & Textures: ${materialMap[c.surfaceMaterial]}
+- Shadow & Elevation Paradigm: ${elevationMap[c.elevation]}
+- Border Execution Strategy: ${bordersMap[c.borders]}
 
-Constraint: Execute the shadow and border constraints strictly. If "Flat UI" or "Borderless" is requested, rely entirely on padding and background tint shifts for component hierarchy.
+> Constraint: Execute the shadow and border constraints strictly. If "Flat UI" or "Borderless" is requested, rely entirely on padding and background tint shifts for component hierarchy.
 
 ### 4. LAYOUT & TECHNICAL SPECS
 - Framework: ${frameworkMap[c.framework]}
