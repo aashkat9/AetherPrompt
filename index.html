@@ -1,643 +1,1298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AetherPrompt — Zero-Shot Prompt Engineering Engine</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background: #09090b; }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AetherPrompt — UI Prompt Architect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — Playful Terminal: bold gen-z dashboard, strict mono,
+   flat acrylic zinc surfaces, complementary purple/cyan, subdued.
+   ============================================================ */
+:root{
+  --purple:#9141AC;
+  --purple-soft:#B47FC7;
+  --cyan:#06B6D4;
+  --cyan-soft:#5FD9EC;
 
-        /* Acrylic Material */
-        .acrylic {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(24px) saturate(1.5);
-            -webkit-backdrop-filter: blur(24px) saturate(1.5);
-        }
-        .acrylic-strong {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(40px) saturate(1.8);
-            -webkit-backdrop-filter: blur(40px) saturate(1.8);
-        }
+  --zinc-950:#0a0a0c;
+  --zinc-925:#0f0f12;
+  --zinc-900:#141417;
+  --zinc-850:#1a1a1f;
+  --zinc-800:#212127;
 
-        /* Selection Cards */
-        .opt-card {
-            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .opt-card:hover {
-            background: rgba(255,255,255,0.06);
-        }
-        .opt-card.active {
-            background: rgba(145, 65, 172, 0.15);
-            border-color: rgba(145, 65, 172, 0.5);
-        }
+  --slate-300:#cbd5e1;
+  --slate-400:#97a3b6;
+  --slate-500:#6f7d92;
+  --slate-600:#4c5768;
 
-        /* Floating Dock */
-        .dock-icon {
-            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .dock-icon:hover {
-            background: rgba(255,255,255,0.08);
-        }
-        .dock-icon.active {
-            background: rgba(145, 65, 172, 0.2);
-            color: #c084fc; /* purple-400 */
-        }
-        .dock-icon.active svg { stroke: #c084fc; }
+  --pastel-green:#9ecdb2;
+  --pastel-amber:#e3c48c;
+  --pastel-rose:#dfa2b0;
 
-        /* Output Markdown */
-        .output-markdown {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 13px;
-            line-height: 1.6;
-        }
+  --hair:rgba(255,255,255,0.09);
+  --hair-strong:rgba(255,255,255,0.16);
+  --hair-accent:rgba(145,65,172,0.35);
 
-        /* Subtle Ambient Glow */
-        .ambient-glow {
-            position: fixed;
-            width: 600px;
-            height: 600px;
-            border-radius: 9999px;
-            filter: blur(120px);
-            opacity: 0.07;
-            pointer-events: none;
-            z-index: 0;
-        }
-    </style>
+  --text-hi:#eceef2;
+  --text-mid:var(--slate-400);
+  --text-low:var(--slate-600);
+
+  --r-lg:26px;
+  --r-md:16px;
+  --r-sm:10px;
+  --r-pill:999px;
+
+  --ease-bounce:cubic-bezier(.34,1.56,.64,1);
+  --ease-smooth:cubic-bezier(.22,.61,.36,1);
+
+  --font:'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ height:100%; overflow:hidden; overscroll-behavior:none; }
+body{
+  margin:0;
+  font-family:var(--font);
+  background:
+    radial-gradient(ellipse 900px 500px at 12% -8%, rgba(145,65,172,0.16), transparent 60%),
+    radial-gradient(ellipse 800px 480px at 88% 8%, rgba(6,182,212,0.12), transparent 60%),
+    var(--zinc-950);
+  color:var(--text-hi);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{ background:var(--purple); color:#fff; }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--zinc-800); border-radius:99px; border:2px solid transparent; background-clip:padding-box; }
+::-webkit-scrollbar-thumb:hover{ background:var(--slate-600); background-clip:padding-box; }
+
+button{ font-family:inherit; color:inherit; }
+input{ font-family:inherit; }
+
+:focus-visible{
+  outline:2px solid var(--cyan-soft);
+  outline-offset:2px;
+  border-radius:6px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{ animation:none !important; transition:none !important; }
+}
+
+/* ---------- shared surfaces (acrylic / hairline / flat) ---------- */
+.acrylic{
+  background:rgba(255,255,255,0.045);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border:1px solid var(--hair);
+}
+.no-shadow, button, .card, .panel, .island{ box-shadow:none !important; }
+
+/* ============================================================
+   LAYOUT SHELL
+   ============================================================ */
+.app{
+  height:100vh;
+  height:100dvh;
+  padding:96px 20px 40px;
+  display:flex;
+  justify-content:center;
+  overflow:hidden;
+}
+.dashboard{
+  width:100%;
+  max-width:1360px;
+  height:100%;
+  display:grid;
+  grid-template-columns:88px minmax(0,1.55fr) minmax(320px,0.95fr);
+  grid-template-rows:auto minmax(0,1fr);
+  gap:16px;
+  align-items:start;
+  overflow:hidden;
+}
+
+/* ---------- brand row (mobile-hidden duplicate lives in island) ---------- */
+.brandline{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  margin-bottom:2px;
+  flex-wrap:wrap;
+}
+.brandline h1{
+  font-size:22px;
+  margin:0;
+  letter-spacing:0.5px;
+  font-weight:800;
+}
+.brandline h1 span{ color:var(--purple-soft); }
+.brandline p{
+  margin:0;
+  color:var(--text-mid);
+  font-size:12.5px;
+  letter-spacing:0.3px;
+}
+
+/* ============================================================
+   DYNAMIC ISLAND — signature element / gamified compiler status
+   ============================================================ */
+.island{
+  position:fixed;
+  top:16px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:60;
+  width:328px;
+  max-height:46px;
+  border-radius:var(--r-pill);
+  overflow:hidden;
+  cursor:pointer;
+  background:rgba(10,10,12,0.72);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+  border:1px solid var(--hair-strong);
+  transition:max-height .5s var(--ease-bounce), width .5s var(--ease-bounce), border-radius .5s var(--ease-bounce);
+}
+.island.expanded{
+  width:360px;
+  max-height:320px;
+  border-radius:28px;
+}
+.island-collapsed{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  height:46px;
+  padding:0 18px;
+  white-space:nowrap;
+}
+.island-dot{
+  width:8px; height:8px; border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),var(--cyan));
+  flex:none;
+  animation:pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse{ 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.55; transform:scale(.82);} }
+.island-step-label{ font-size:12px; font-weight:700; letter-spacing:0.6px; color:var(--text-hi); }
+.island-bar{
+  flex:1;
+  height:5px;
+  border-radius:99px;
+  background:var(--zinc-800);
+  overflow:hidden;
+  min-width:64px;
+}
+.island-bar > i{
+  display:block; height:100%;
+  background:linear-gradient(90deg,var(--purple),var(--cyan));
+  border-radius:99px;
+  transition:width .5s var(--ease-smooth);
+}
+.island-pct{ font-size:11px; color:var(--text-mid); font-weight:600; }
+.island-chev{ color:var(--text-low); font-size:10px; transition:transform .35s var(--ease-bounce); }
+.island.expanded .island-chev{ transform:rotate(180deg); }
+
+.island-expanded-body{
+  padding:6px 16px 16px;
+  opacity:0;
+  transform:translateY(-4px);
+  transition:opacity .3s ease .08s, transform .3s ease .08s;
+}
+.island.expanded .island-expanded-body{ opacity:1; transform:translateY(0); }
+.island-title-row{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 2px 10px;
+  border-bottom:1px solid var(--hair);
+  margin-bottom:10px;
+}
+.island-title-row b{ font-size:12px; letter-spacing:1px; color:var(--purple-soft); }
+.island-title-row span{ font-size:10.5px; color:var(--text-low); }
+.island-steps{ display:flex; flex-direction:column; gap:6px; }
+.island-step-btn{
+  display:flex; align-items:center; gap:10px;
+  background:transparent; border:1px solid transparent;
+  border-radius:12px; padding:7px 10px;
+  text-align:left; cursor:pointer;
+  transition:background .2s var(--ease-smooth), border-color .2s;
+  font-size:12px;
+}
+.island-step-btn:hover{ background:rgba(255,255,255,0.05); }
+.island-step-btn.active{ border-color:var(--hair-accent); background:rgba(145,65,172,0.10); }
+.island-step-num{
+  width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700;
+  background:var(--zinc-800); color:var(--text-mid); flex:none;
+}
+.island-step-btn.active .island-step-num{ background:linear-gradient(135deg,var(--purple),var(--cyan)); color:#fff; }
+.island-step-btn.done .island-step-num{ background:var(--zinc-800); color:var(--pastel-green); }
+.island-step-name{ color:var(--text-hi); font-weight:600; }
+.island-step-btn.active .island-step-name{ color:#fff; }
+
+/* achievement pop */
+.pop-toast{
+  position:fixed; top:74px; left:50%; transform:translateX(-50%) translateY(-8px);
+  background:var(--zinc-900); border:1px solid var(--hair-accent);
+  padding:8px 16px; border-radius:99px; font-size:12px; font-weight:600;
+  color:var(--pastel-green); z-index:70;
+  opacity:0; pointer-events:none;
+  transition:opacity .35s var(--ease-smooth), transform .35s var(--ease-bounce);
+}
+.pop-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ============================================================
+   RAIL (step nav, vertical / desktop)
+   ============================================================ */
+.rail{
+  display:flex; flex-direction:column; gap:10px;
+  height:100%;
+  min-height:0;
+  overflow-y:auto;
+  padding-right:2px;
+}
+.rail-btn{
+  width:100%;
+  aspect-ratio:1/1.05;
+  border-radius:var(--r-md);
+  border:1px solid var(--hair);
+  background:rgba(255,255,255,0.03);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px;
+  cursor:pointer;
+  transition:transform .25s var(--ease-bounce), border-color .25s, background .25s;
+}
+.rail-btn:hover{ transform:translateY(-2px); border-color:var(--hair-strong); }
+.rail-btn.active{
+  background:linear-gradient(160deg, rgba(145,65,172,0.20), rgba(6,182,212,0.10));
+  border-color:var(--hair-accent);
+}
+.rail-glyph{ font-size:18px; line-height:1; color:var(--text-mid); }
+.rail-btn.active .rail-glyph{ color:#fff; }
+.rail-num{ font-size:9.5px; letter-spacing:1px; color:var(--text-low); font-weight:700; }
+.rail-btn.active .rail-num{ color:var(--cyan-soft); }
+
+/* ============================================================
+   STAGE (active step content)
+   ============================================================ */
+.stage{
+  background:rgba(255,255,255,0.035);
+  border:1px solid var(--hair);
+  border-radius:var(--r-lg);
+  padding:26px 26px 30px;
+  height:100%;
+  min-height:0;
+  overflow-y:auto;
+}
+.stage-head{ margin-bottom:22px; }
+.stage-eyebrow{
+  font-size:11px; letter-spacing:2px; color:var(--cyan-soft);
+  font-weight:700; text-transform:uppercase; margin:0 0 6px;
+}
+.stage-title{ font-size:20px; font-weight:800; margin:0 0 6px; }
+.stage-sub{ font-size:12.5px; color:var(--text-mid); margin:0; line-height:1.5; }
+
+.field-block{ margin-bottom:26px; }
+.field-block:last-child{ margin-bottom:0; }
+.field-label{
+  display:flex; align-items:center; gap:8px;
+  font-size:11.5px; letter-spacing:1px; text-transform:uppercase;
+  color:var(--slate-400); font-weight:700; margin-bottom:12px;
+}
+.field-label::before{ content:'›'; color:var(--purple-soft); font-weight:800; }
+
+.card-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
+  gap:10px;
+}
+.card-grid.wide{ grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); }
+.card-grid.tight{ grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); }
+
+.card{
+  position:relative;
+  text-align:left;
+  border-radius:var(--r-md);
+  border:1px solid var(--hair);
+  background:var(--zinc-900);
+  padding:14px 14px 13px;
+  cursor:pointer;
+  transition:transform .22s var(--ease-bounce), border-color .22s, background .22s;
+  display:flex; flex-direction:column; gap:6px;
+}
+.card:hover{ transform:translateY(-3px) scale(1.012); border-color:var(--hair-strong); }
+.card:active{ transform:translateY(-1px) scale(0.985); }
+.card.selected{
+  border-color:transparent;
+  background:
+    linear-gradient(var(--zinc-900),var(--zinc-900)) padding-box,
+    linear-gradient(135deg,var(--purple),var(--cyan)) border-box;
+  border:1.5px solid transparent;
+}
+.card-top{ display:flex; align-items:center; justify-content:space-between; }
+.card-glyph{ font-size:17px; color:var(--purple-soft); }
+.card.selected .card-glyph{ color:var(--cyan-soft); }
+.card-check{
+  width:16px; height:16px; border-radius:50%;
+  border:1.5px solid var(--slate-600);
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; color:transparent;
+  transition:all .2s;
+}
+.card.selected .card-check{ background:linear-gradient(135deg,var(--purple),var(--cyan)); border-color:transparent; color:#fff; }
+.card-label{ font-size:13px; font-weight:700; color:var(--text-hi); }
+.card-note{ font-size:10.5px; color:var(--text-low); line-height:1.4; }
+.card.big .card-note{ font-size:11px; color:var(--text-mid); line-height:1.55; }
+.card.big{ padding:16px 16px 15px; }
+
+/* chip variant (flavor / harmony / etc) */
+.chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  border:1px solid var(--hair);
+  background:var(--zinc-900);
+  border-radius:99px;
+  padding:8px 14px;
+  font-size:12px; font-weight:600; color:var(--text-mid);
+  cursor:pointer;
+  transition:transform .2s var(--ease-bounce), border-color .2s, color .2s, background .2s;
+}
+.chip:hover{ transform:translateY(-2px); color:var(--text-hi); }
+.chip.selected{
+  color:#fff; border-color:transparent;
+  background:linear-gradient(135deg,var(--purple),var(--cyan));
+}
+.chip.locked{ opacity:.32; cursor:not-allowed; }
+.chip.locked:hover{ transform:none; }
+
+.archetype-detail{
+  margin-top:14px; padding:14px 16px; border-radius:var(--r-md);
+  background:rgba(6,182,212,0.06); border:1px solid var(--hair);
+  font-size:11.5px; line-height:1.6; color:var(--text-mid);
+}
+.archetype-detail b{ color:var(--cyan-soft); }
+
+/* color engine specifics */
+.color-row{ display:flex; gap:14px; flex-wrap:wrap; }
+.color-field{
+  flex:1; min-width:220px;
+  border:1px solid var(--hair); border-radius:var(--r-md);
+  background:var(--zinc-900); padding:14px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.color-field-top{ display:flex; align-items:center; gap:12px; }
+.swatch-wrap{ position:relative; width:44px; height:44px; flex:none; }
+.swatch-wrap input[type=color]{
+  -webkit-appearance:none; appearance:none;
+  width:44px; height:44px; border:none; border-radius:12px;
+  cursor:pointer; background:none; padding:0;
+}
+.swatch-wrap input[type=color]::-webkit-color-swatch-wrapper{ padding:0; border-radius:12px; }
+.swatch-wrap input[type=color]::-webkit-color-swatch{ border:1px solid var(--hair-strong); border-radius:12px; }
+.hex-input{
+  flex:1; background:var(--zinc-850); border:1px solid var(--hair);
+  border-radius:var(--r-sm); padding:9px 10px; color:var(--text-hi);
+  font-size:13px; font-weight:700; letter-spacing:0.5px;
+}
+.opacity-strip{ display:flex; border-radius:8px; overflow:hidden; border:1px solid var(--hair); }
+.opacity-strip div{ flex:1; height:22px; }
+.opacity-caption{ font-size:9.5px; color:var(--text-low); display:flex; justify-content:space-between; }
+
+.preview-strip{ display:flex; border-radius:8px; overflow:hidden; border:1px solid var(--hair); height:26px; }
+.preview-strip div{ flex:1; }
+
+.dot-row{ display:flex; gap:10px; align-items:center; }
+.dot{ width:14px; height:14px; border-radius:50%; border:1px solid var(--hair-strong); }
+.dot-label{ font-size:10.5px; color:var(--text-low); }
+
+.gray-ramp{ display:flex; border-radius:8px; overflow:hidden; border:1px solid var(--hair); height:22px; }
+.gray-ramp div{ flex:1; }
+
+/* CTA */
+.cta-row{ display:flex; align-items:center; gap:14px; margin-top:30px; flex-wrap:wrap; }
+.btn{
+  border:none; border-radius:99px; cursor:pointer;
+  font-weight:800; letter-spacing:0.6px; font-size:12.5px;
+  padding:13px 24px;
+  transition:transform .22s var(--ease-bounce), filter .2s;
+}
+.btn:hover{ transform:translateY(-2px) scale(1.02); }
+.btn:active{ transform:translateY(0) scale(.97); }
+.btn-primary{ background:linear-gradient(135deg,var(--purple),var(--cyan)); color:#fff; }
+.btn-ghost{ background:transparent; border:1px solid var(--hair-strong); color:var(--text-mid); }
+.btn-ghost:hover{ color:var(--text-hi); }
+.step-hint{ font-size:11px; color:var(--text-low); }
+
+/* ============================================================
+   SIDE PANELS (state + prompt) — dense multi-panel dashboard
+   ============================================================ */
+.sidepanels{
+  display:flex; flex-direction:column; gap:16px;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+}
+.panel{
+  border-radius:var(--r-lg);
+  background:rgba(255,255,255,0.035);
+  border:1px solid var(--hair);
+  overflow:hidden;
+  display:flex; flex-direction:column;
+  min-height:0;
+}
+.state-panel{ flex:0 1 38%; }
+.prompt-panel{ flex:1 1 62%; }
+.panel-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; border-bottom:1px solid var(--hair);
+  flex:none;
+}
+.panel-head-l{ display:flex; align-items:center; gap:8px; }
+.panel-dot{ width:7px; height:7px; border-radius:50%; }
+.panel-dot.p{ background:var(--purple-soft); }
+.panel-dot.c{ background:var(--cyan-soft); }
+.panel-title{ font-size:11.5px; letter-spacing:1.4px; text-transform:uppercase; font-weight:800; color:var(--text-mid); }
+.panel-body{ padding:16px 18px; overflow:auto; flex:1 1 auto; min-height:0; }
+.state-panel .panel-body{ font-size:11.5px; line-height:1.65; }
+.prompt-panel .panel-body{ font-size:11.5px; line-height:1.7; }
+pre.codeblock{ margin:0; white-space:pre-wrap; word-break:break-word; font-family:var(--font); }
+
+.jkey{ color:var(--cyan-soft); }
+.jstr{ color:var(--pastel-green); }
+.jnum{ color:var(--pastel-amber); }
+.jbool,.jnull{ color:var(--purple-soft); }
+.jpunc{ color:var(--slate-600); }
+
+.line-tag{ color:var(--purple-soft); font-weight:700; }
+.line-head{ color:var(--cyan-soft); font-weight:800; }
+.line-key{ color:var(--slate-400); }
+.line-val{ color:var(--text-hi); }
+.line-note{ color:var(--pastel-amber); }
+.line-plain{ color:var(--text-mid); }
+
+.panel-foot{
+  padding:14px 18px; border-top:1px solid var(--hair);
+  display:flex; align-items:center; gap:10px;
+  flex:none;
+}
+.copy-btn{
+  flex:1; background:var(--zinc-900); border:1px solid var(--hair-strong);
+  border-radius:12px; padding:11px; font-size:11.5px; font-weight:800;
+  letter-spacing:0.8px; cursor:pointer; color:var(--text-hi);
+  transition:all .2s var(--ease-bounce);
+}
+.copy-btn:hover{ transform:translateY(-1px); border-color:var(--cyan-soft); color:var(--cyan-soft); }
+.copy-btn.copied{ border-color:var(--pastel-green); color:var(--pastel-green); }
+.char-count{ font-size:10px; color:var(--text-low); white-space:nowrap; }
+
+/* ============================================================
+   RESPONSIVE — mobile: island → bottom thumb zone, stacked panels
+   ============================================================ */
+@media (max-width:960px){
+  .dashboard{
+    grid-template-columns:1fr;
+    grid-template-rows:auto auto minmax(0,3fr) minmax(0,2fr);
+  }
+  .rail{
+    height:auto; flex-direction:row; overflow-x:auto; overflow-y:hidden; gap:8px;
+    padding-bottom:4px;
+  }
+  .rail-btn{ min-width:76px; aspect-ratio:auto; padding:10px 6px; flex:none; }
+  .sidepanels{ gap:12px; }
+  .state-panel{ flex:1 1 45%; }
+  .prompt-panel{ flex:1 1 55%; }
+}
+@media (max-width:640px){
+  .app{ padding:20px 14px 108px; }
+  .island{ top:auto; bottom:16px; }
+  .brandline{ display:none; }
+  .dashboard{ grid-template-rows:auto minmax(0,2.4fr) minmax(0,2fr); }
+  .stage{ padding:20px 18px 24px; }
+  .card-grid{ grid-template-columns:1fr 1fr; }
+}
+@media (max-width:420px){
+  .card-grid{ grid-template-columns:1fr; }
+}
+</style>
 </head>
-<body class="font-sans text-slate-300 antialiased h-screen overflow-hidden flex relative">
+<body>
 
-    <!-- Ambient Background Glows -->
-    <div class="ambient-glow bg-[#9141AC] top-[-10%] left-[-5%]"></div>
-    <div class="ambient-glow bg-[#06B6D4] bottom-[-15%] right-[-10%]"></div>
+<div class="island" id="island" role="button" tabindex="0" aria-label="Toggle step navigator">
+  <div class="island-collapsed">
+    <span class="island-dot"></span>
+    <span class="island-step-label" id="islandStepLabel">STEP 1/4</span>
+    <span class="island-bar"><i id="islandBarFill"></i></span>
+    <span class="island-pct" id="islandPct">25%</span>
+    <span class="island-chev">▾</span>
+  </div>
+  <div class="island-expanded-body">
+    <div class="island-title-row">
+      <b>⌁ AETHERPROMPT</b>
+      <span>build status</span>
+    </div>
+    <div class="island-steps" id="islandSteps"></div>
+  </div>
+</div>
 
-    <!-- Floating Sidebar Dock -->
-    <aside class="w-20 h-full flex flex-col items-center py-8 z-20 flex-shrink-0">
-        <div class="acrylic-strong border border-white/10 rounded-2xl p-2 flex flex-col items-center gap-2">
-            <button onclick="setStep(1)" class="dock-icon active p-3 rounded-xl border border-transparent" data-step="1" title="Core Stack">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-            </button>
-            <button onclick="setStep(2)" class="dock-icon p-3 rounded-xl border border-transparent" data-step="2" title="Identity & Vibe">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-            </button>
-            <button onclick="setStep(3)" class="dock-icon p-3 rounded-xl border border-transparent" data-step="3" title="Color & Material">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="10.5" r="2.5"></circle><circle cx="8.5" cy="7.5" r="2.5"></circle><circle cx="6.5" cy="12.5" r="2.5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
-            </button>
-            <button onclick="setStep(4)" class="dock-icon p-3 rounded-xl border border-transparent" data-step="4" title="Navigation & Layout">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            </button>
+<div class="pop-toast" id="popToast">✓ Step complete</div>
 
-            <div class="w-6 h-px bg-white/10 my-1"></div>
+<div class="app">
+  <div class="dashboard">
 
-            <button onclick="generateOutput()" class="dock-icon p-3 rounded-xl border border-transparent text-cyan-400 hover:bg-[#06B6D4]/10" title="Compile Prompt">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-            </button>
-        </div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <main class="flex-1 h-full overflow-y-auto flex flex-col items-center justify-start py-12 px-4 relative z-10">
-
-        <!-- Header -->
-        <header class="w-full max-w-3xl mb-12 flex items-end justify-between">
-            <div>
-                <div class="flex items-center gap-2 mb-1">
-                    <div class="w-2 h-2 rounded-full bg-[#9141AC]"></div>
-                    <span class="text-xs font-medium tracking-widest uppercase text-slate-500">System v1.0</span>
-                </div>
-                <h1 class="text-3xl font-semibold text-white tracking-tight">AetherPrompt</h1>
-                <p class="text-slate-500 text-sm mt-1">Zero-shot prompt engineering engine for UI generation.</p>
-            </div>
-            <div id="step-indicator" class="text-xs font-mono text-slate-600">01 / 04</div>
-        </header>
-
-        <!-- Configuration Container -->
-        <div id="config-container" class="w-full max-w-3xl mb-24">
-            <!-- Steps injected via JS -->
-        </div>
-
-    </main>
-
-    <!-- Output Overlay -->
-    <div id="output-overlay" class="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-xl hidden flex items-center justify-center p-8">
-        <div class="w-full max-w-4xl h-full max-h-[800px] flex flex-col acrylic-strong border border-white/10 rounded-3xl overflow-hidden">
-            <div class="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
-                <div>
-                    <h2 class="text-lg font-medium text-white">Compiled System Role</h2>
-                    <p class="text-sm text-slate-500 mt-1">Copy the markdown below to instruct your LLM.</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="copyOutput()" id="copy-btn" class="text-xs px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">Copy Markdown</button>
-                    <button onclick="closeOutput()" class="text-xs px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">Close</button>
-                </div>
-            </div>
-            <div class="flex-1 overflow-y-auto p-8">
-                <pre id="output-content" class="output-markdown text-slate-300 whitespace-pre-wrap"></pre>
-            </div>
-        </div>
+    <div class="brandline">
+      <h1>⌁ Aether<span>Prompt</span></h1>
+      <p>the UI prompt architect — configure a design system, ship a compiler-ready brief</p>
     </div>
 
-    <script>
-        // --- STATE MANAGEMENT ---
-        const state = {
-            step: 1,
-            config: {
-                // Step 1
-                framework: 'html-css',
-                audience: 'creatives',
-                // Step 2
-                archetype: 'high-tech',
-                flavor: 'corporate',
-                emotion: 'calm',
-                typography: 'sans',
-                // Step 3
-                primaryHex: '#9141AC',
-                secondaryHex: '#06B6D4',
-                harmony: 'monochromatic',
-                neutrals: 'slate',
-                contrast: 'aa',
-                semantics: 'pastels',
-                surfaceBase: 'zinc',
-                surfaceMaterial: 'acrylic',
-                elevation: 'flat',
-                borders: 'hairline',
-                // Step 4
-                navigation: 'dock',
-                grid: 'center'
-            }
-        };
+    <nav class="rail" id="rail" aria-label="Wizard steps"></nav>
 
-        // Compatibility Engine Data
-        const flavorMap = {
-            'high-tech': ['Corporate Clean', 'Modern App Tech', 'Web3/Crypto'],
-            'corporate': ['High-Tech', 'Minimalist', 'Academic'],
-            'luxury': ['Minimalist', 'Corporate', 'Editorial'],
-            'web3': ['High-Tech', 'Playful', 'Glitch Art'],
-            'playful': ['Web3', 'Retro', 'Corporate'],
-            'academic': ['Corporate', 'High-Tech', 'Minimalist']
-        };
+    <section class="stage" id="stage"></section>
 
-        // --- RENDERING ENGINE ---
-        function render() {
-            const container = document.getElementById('config-container');
-            const stepIndicator = document.getElementById('step-indicator');
-            stepIndicator.textContent = `0${state.step} / 04`;
+    <aside class="sidepanels">
+      <div class="panel state-panel">
+        <div class="panel-head">
+          <div class="panel-head-l"><span class="panel-dot p"></span><span class="panel-title">Live State</span></div>
+          <span class="char-count" id="stateStep">step 1/4</span>
+        </div>
+        <div class="panel-body"><pre class="codeblock" id="stateJson"></pre></div>
+      </div>
 
-            // Update Dock
-            document.querySelectorAll('.dock-icon[data-step]').forEach(btn => {
-                if (parseInt(btn.dataset.step) === state.step) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+      <div class="panel prompt-panel">
+        <div class="panel-head">
+          <div class="panel-head-l"><span class="panel-dot c"></span><span class="panel-title">Generated Prompt</span></div>
+          <span class="char-count" id="promptChars">0 chars</span>
+        </div>
+        <div class="panel-body"><pre class="codeblock" id="promptOut"></pre></div>
+        <div class="panel-foot">
+          <button class="copy-btn" id="copyBtn">⎘ COPY PROMPT</button>
+        </div>
+      </div>
+    </aside>
 
-            let html = '';
-            switch(state.step) {
-                case 1: html = renderStep1(); break;
-                case 2: html = renderStep2(); break;
-                case 3: html = renderStep3(); break;
-                case 4: html = renderStep4(); break;
-            }
-            container.innerHTML = html;
-        }
+  </div>
+</div>
 
-        function cardGroup(options, selectedValue, stateKey, cols='grid-cols-2') {
-            return `<div class="grid ${cols} gap-3">
-                ${options.map(opt => `
-                    <div onclick="selectOption('${stateKey}', '${opt.value}')"
-                         class="opt-card p-4 rounded-xl border border-white/10 cursor-pointer flex items-start gap-3 ${state.config[stateKey] === opt.value ? 'active' : ''}">
-                        <div class="w-5 h-5 mt-0.5 rounded-full border ${state.config[stateKey] === opt.value ? 'border-[#9141AC] bg-[#9141AC]/20' : 'border-white/20'} flex items-center justify-center flex-shrink-0">
-                            ${state.config[stateKey] === opt.value ? '<div class="w-2 h-2 rounded-full bg-[#c084fc]"></div>' : ''}
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-white">${opt.label}</div>
-                            <div class="text-xs text-slate-500 mt-1 leading-relaxed">${opt.desc}</div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>`;
-        }
+<script>
+(function(){
+"use strict";
 
-        function sectionHeader(title, desc) {
-            return `<div class="mb-6">
-                <h3 class="text-xl font-semibold text-white mb-1">${title}</h3>
-                <p class="text-sm text-slate-500">${desc}</p>
-            </div>`;
-        }
+/* ============================================================
+   DATA — mirrors the AetherPrompt parameter mapping table
+   ============================================================ */
+const FRAMEWORKS = [
+  {id:'react', label:'React 19', glyph:'⬡', full:'React 19 (TSX, Functional Hooks)'},
+  {id:'svelte', label:'SvelteKit 2.0', glyph:'◭', full:'SvelteKit 2.0 (Svelte 5 Runes)'},
+  {id:'vue', label:'Vue 3', glyph:'▲', full:'Vue 3 (Composition API)'},
+  {id:'html-css', label:'Semantic HTML5', glyph:'▣', full:'Pure Semantic HTML5 + Custom CSS'},
+];
 
-        function stepNavigation(showPrev=true) {
-            return `<div class="flex items-center justify-between mt-12 pt-6 border-t border-white/5">
-                ${showPrev ? `<button onclick="prevStep()" class="text-sm px-5 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">Back</button>` : '<div></div>'}
-                <button onclick="nextStep()" class="text-sm px-5 py-2.5 rounded-lg bg-[#9141AC] text-white hover:bg-[#9141AC]/80 transition-colors">Continue</button>
-            </div>`;
-        }
+const AUDIENCES = [
+  {id:'developers', label:'Developers & Engineers', glyph:'▤', full:'Developers & Engineers (Prioritizes extreme data density and keyboard-centric navigation)'},
+  {id:'enterprise', label:'Enterprise Executives', glyph:'▦', full:'Enterprise Executives (Prioritizes high-level KPI summaries and clean charts)'},
+  {id:'gen-z', label:'Consumers / Gen-Z', glyph:'◕', full:'General Consumers / Gen-Z (Prioritizes mobile-first thumb zones and gamification)'},
+  {id:'creatives', label:'Creatives & Designers', glyph:'◈', full:'Creatives & Designers (Prioritizes pixel-perfect alignment and experimental layouts)'},
+];
 
-        // Step 1: Core Stack
-        function renderStep1() {
-            const frameworks = [
-                { value: 'react', label: 'React 19', desc: 'TSX, Functional Hooks, Strict Typing' },
-                { value: 'svelte', label: 'SvelteKit 2.0', desc: 'Svelte 5 Runes, Reactive Compiler' },
-                { value: 'vue', label: 'Vue 3', desc: 'Composition API, Reactive Refs' },
-                { value: 'html-css', label: 'Pure HTML/CSS', desc: 'Semantic HTML5, Custom Properties' }
-            ];
-            const audiences = [
-                { value: 'developers', label: 'Developers & Engineers', desc: 'Data density, keyboard-centric' },
-                { value: 'enterprise', label: 'Enterprise Executives', desc: 'High-level KPI, clean charts' },
-                { value: 'gen-z', label: 'Gen-Z Consumers', desc: 'Mobile-first, gamification' },
-                { value: 'creatives', label: 'Creatives & Designers', desc: 'Pixel-perfect, experimental layouts' }
-            ];
-            return `
-                ${sectionHeader('Core Stack & Audience', 'Define the foundational technology and the intended end-user.')}
-                <div class="space-y-8">
-                    <div>
-                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Framework</div>
-                        ${cardGroup(frameworks, state.config.framework, 'framework')}
-                    </div>
-                    <div>
-                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Target Audience</div>
-                        ${cardGroup(audiences, state.config.audience, 'audience')}
-                    </div>
-                </div>
-                ${stepNavigation(false)}
-            `;
-        }
+const ARCHETYPES = [
+  {id:'high-tech', label:'High-Tech', glyph:'▣', full:'High-Tech & Developer-First interface. Draw inspiration from tiling window managers, IDEs, and CLI environments. Utilize strict grid alignments, exposed structural borders, and dense monospaced telemetry data. Prioritize function, keyboard-navigability, and raw utility over decorative flourishes. The visual language should feel like a native, high-performance developer tool with visible state indicators and highly structured data panes.'},
+  {id:'corporate', label:'Corporate Clean', glyph:'▤', full:'Corporate Clean interface. Establish absolute user trust through conventional, highly predictable UX patterns. Utilize balanced, symmetrical layouts, clear visual hierarchies, and stark contrast. Components should feel robust, fully accessible, and modular. The design language must echo enterprise-grade dashboards—prioritizing clarity, compliance, and frictionless user flows over experimental aesthetics.'},
+  {id:'luxury', label:'Luxury', glyph:'◐', full:'Ultra-Premium & Luxury interface. Embrace vast negative space and deliberate, editorial pacing. Use delicate hairline dividers, slow cinematic transitions, and precise, highly intentional typographic scales. The UI should feel curated, bespoke, and quiet, requiring the user to slow down and appreciate the content. Avoid overwhelming data density in favor of high-impact, singular focal points.'},
+  {id:'web3', label:'Web3 / Crypto', glyph:'◈', full:'Web3 & Crypto Avant-Garde interface. Push modern browser capabilities with dark-mode native aesthetics. Incorporate hardware-accelerated floating elements, deeply saturated neon glows against pitch-black canvases, and frosted glass panels. The layout should feel decentralized, cutting-edge, and highly spatial, blending complex financial data visualization with immersive, high-tech branding.'},
+  {id:'playful', label:'Playful', glyph:'◕', full:'Playful, Quirky & Approachable interface. Break the rigidity of standard grids with organic shapes, bouncy micro-interactions, and asymmetric layouts. Utilize bold, slightly exaggerated UI elements, soft geometry, and gamified feedback states. The interface should feel alive, friendly, and inherently tactile, prioritizing user delight and engagement without sacrificing core usability.'},
+  {id:'academic', label:'Academic', glyph:'▥', full:'Academic & Research-Heavy interface. Focus ruthlessly on legibility and information architecture. Draw inspiration from rigorous typesetting, LaTeX documents, and scientific journals. Utilize dense, highly structured data tables, strict center-focused reading columns, and subtle footnote/citation patterns. The design must elegantly handle massive text and data density without inducing cognitive overload.'},
+];
 
-        // Step 2: Identity
-        function renderStep2() {
-            const archetypes = [
-                { value: 'high-tech', label: 'High-Tech', desc: 'Developer-first, exposed components' },
-                { value: 'corporate', label: 'Corporate Clean', desc: 'Structured, conventional, maximum trust' },
-                { value: 'luxury', label: 'Ultra-Premium', desc: 'Vast spacing, elegant serifs, stark contrast' },
-                { value: 'web3', label: 'Web3 / Avant-Garde', desc: 'Dark mode, neon glows, brutalism' },
-                { value: 'playful', label: 'Playful & Quirky', desc: 'Organic shapes, bright pastels' },
-                { value: 'academic', label: 'Academic / Research', desc: 'Dense typography, minimal chrome' }
-            ];
+const FLAVORS = [
+  {id:'corporate', label:'Corporate Clean'},
+  {id:'modern', label:'Modern App Tech'},
+  {id:'web3', label:'Web3/Crypto'},
+  {id:'minimalist', label:'Minimalist'},
+  {id:'academic', label:'Academic'},
+  {id:'editorial', label:'Editorial'},
+  {id:'high-tech', label:'High-Tech'},
+  {id:'glitch', label:'Glitch Art'},
+  {id:'playful', label:'Playful'},
+  {id:'retro', label:'Retro'},
+];
+const FLAVOR_COMPAT = {
+  'high-tech':['high-tech','modern','web3','glitch','minimalist'],
+  'corporate':['corporate','modern','minimalist','academic','editorial'],
+  'luxury':['editorial','minimalist','academic','corporate'],
+  'web3':['web3','glitch','high-tech','modern','retro'],
+  'playful':['playful','retro','modern','glitch','corporate'],
+  'academic':['academic','editorial','minimalist','corporate'],
+};
 
-            const flavors = flavorMap[state.config.archetype].map(f => {
-                return { value: f.toLowerCase().split(/[ /]+/)[0], label: f, desc: 'Secondary injection' };
-            });
-            // Auto-select first flavor if current is invalid
-            if (!flavors.find(f => f.value === state.config.flavor)) {
-                state.config.flavor = flavors[0].value;
-            }
+const EMOTIONS = [
+  {id:'stable', label:'Secure & Stable', glyph:'◆'},
+  {id:'bold', label:'High-Energy & Bold', glyph:'▲'},
+  {id:'calm', label:'Calm & Minimal', glyph:'○'},
+  {id:'edgy', label:'Edgy & Disruptive', glyph:'◭'},
+];
 
-            const emotions = [
-                { value: 'stable', label: 'Secure & Stable', desc: 'Predictable, grounded UI' },
-                { value: 'bold', label: 'High-Energy', desc: 'Bold, urgent contrasts' },
-                { value: 'calm', label: 'Calm & Minimal', desc: 'Soft contrast, vast negative space' },
-                { value: 'edgy', label: 'Edgy & Disruptive', desc: 'Asymmetric, unconventional' }
-            ];
+const TYPOGRAPHIES = [
+  {id:'sans', label:'Modern Sans-Serif', glyph:'A'},
+  {id:'serif', label:'Elegant Serif', glyph:'A'},
+  {id:'mono', label:'Strict Monospace', glyph:'A'},
+  {id:'mixed', label:'Mixed (Serif + Sans)', glyph:'A'},
+];
 
-            const typo = [
-                { value: 'sans', label: 'Modern Sans-Serif', desc: 'Clean, highly legible' },
-                { value: 'serif', label: 'Elegant Serif', desc: 'Classic, editorial' },
-                { value: 'mono', label: 'Strict Monospace', desc: 'Technical, tabular' },
-                { value: 'mixed', label: 'Mixed', desc: 'Serif headers, Sans body' }
-            ];
+const HARMONIES = [
+  {id:'monochromatic', label:'Monochromatic'},
+  {id:'analogous', label:'Analogous'},
+  {id:'complementary', label:'Complementary'},
+  {id:'split', label:'Split-Complementary'},
+];
 
-            return `
-                ${sectionHeader('Identity & Vibe Engine', 'Establish the emotional and visual soul of the application.')}
-                <div class="space-y-8">
-                    <div>
-                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Base Archetype</div>
-                        ${cardGroup(archetypes, state.config.archetype, 'archetype', 'grid-cols-3')}
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500">Flavor Mix</div>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#06B6D4]/10 text-[#06B6D4]">Compatibility Engine Active</span>
-                        </div>
-                        ${cardGroup(flavors, state.config.flavor, 'flavor', flavors.length <= 3 ? `grid-cols-${flavors.length}` : 'grid-cols-3')}
-                    </div>
-                    <div class="grid grid-cols-2 gap-8">
-                        <div>
-                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Core Emotion</div>
-                            ${cardGroup(emotions, state.config.emotion, 'emotion')}
-                        </div>
-                        <div>
-                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Typography</div>
-                            ${cardGroup(typo, state.config.typography, 'typography')}
-                        </div>
-                    </div>
-                </div>
-                ${stepNavigation()}
-            `;
-        }
+const NEUTRALS = [
+  {id:'slate', label:'Slate', note:'Cool, blue-tinted grays', full:'Slate (Cool, blue-tinted grays)', ramp:['#f8fafc','#94a3b8','#64748b','#334155','#0f172a']},
+  {id:'zinc', label:'Zinc', note:'Standard Tech', full:'Zinc (Standard Tech)', ramp:['#fafafa','#a1a1aa','#71717a','#3f3f46','#18181b']},
+  {id:'neutral', label:'Neutral', note:'Pure Grayscale', full:'Neutral (Pure Grayscale)', ramp:['#fafafa','#a3a3a3','#737373','#404040','#171717']},
+  {id:'stone', label:'Stone', note:'Warm / Earthy', full:'Stone (Warm/Earthy)', ramp:['#fafaf9','#a8a29e','#78716c','#44403c','#1c1917']},
+];
 
-        // Step 3: Color & Material
-        function renderStep3() {
-            const miniSelect = (label, options, stateKey) => `
-                <div>
-                    <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">${label}</div>
-                    <div class="flex flex-wrap gap-2">
-                        ${options.map(opt => `
-                            <button onclick="selectOption('${stateKey}', '${opt.value}')"
-                                    class="text-xs px-3 py-1.5 rounded-lg border transition-colors ${state.config[stateKey] === opt.value ? 'bg-[#9141AC]/20 border-[#9141AC]/50 text-[#c084fc]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}">
-                                ${opt.label}
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+const CONTRASTS = [
+  {id:'aa', label:'WCAG AA', note:'4.5:1', full:'WCAG AA (4.5:1)'},
+  {id:'aaa', label:'WCAG AAA', note:'7:1', full:'WCAG AAA (7:1)'},
+  {id:'edge', label:'High Contrast Edge', note:'edge mode', full:'High Contrast Edge Mode'},
+  {id:'subdued', label:'Aesthetic Subdued', note:'soft & quiet', full:'Aesthetic Subdued'},
+];
 
-            const harmonies = [
-                {value: 'monochromatic', label: 'Monochromatic'},
-                {value: 'analogous', label: 'Analogous'},
-                {value: 'complementary', label: 'Complementary'},
-                {value: 'split', label: 'Split-Compl.'}
-            ];
-            const neutrals = [
-                {value: 'slate', label: 'Slate (Cool)'},
-                {value: 'zinc', label: 'Zinc (Tech)'},
-                {value: 'neutral', label: 'Neutral (Pure)'},
-                {value: 'stone', label: 'Stone (Warm)'}
-            ];
-            const contrasts = [
-                {value: 'aa', label: 'WCAG AA'},
-                {value: 'aaa', label: 'WCAG AAA'},
-                {value: 'edge', label: 'Edge Mode'},
-                {value: 'subdued', label: 'Aesthetic'}
-            ];
-            const semantics = [
-                {value: 'vivid', label: 'Vivid'},
-                {value: 'pastels', label: 'Muted Pastels'},
-                {value: 'neon', label: 'Neon'},
-                {value: 'mono', label: 'Monochrome'}
-            ];
-            const bases = [
-                {value: 'oled', label: 'Pitch OLED'},
-                {value: 'zinc', label: 'Deep Zinc'},
-                {value: 'navy', label: 'Midnight Navy'}
-            ];
-            const materials = [
-                {value: 'matte', label: 'Opaque Matte'},
-                {value: 'glass', label: 'Glassmorphism'},
-                {value: 'acrylic', label: 'Sat. Acrylic'},
-                {value: 'ghost', label: 'Wireframe'}
-            ];
-            const elevations = [
-                {value: 'ambient', label: 'Ambient'},
-                {value: 'hard', label: 'Hard Offset'},
-                {value: 'neon', label: 'Neon Glow'},
-                {value: 'material', label: 'Material'},
-                {value: 'flat', label: 'Flat UI'}
-            ];
-            const borders = [
-                {value: 'hairline', label: 'Hairline'},
-                {value: 'thick', label: 'Thick'},
-                {value: 'gradient', label: 'Gradient'},
-                {value: 'none', label: 'Borderless'}
-            ];
+const SEMANTICS = [
+  {id:'vivid', label:'Vivid Standard', note:'R / G / Y', full:'Vivid Standard (R/G/Y)', dots:['#22c55e','#eab308','#ef4444']},
+  {id:'pastels', label:'Muted Pastels', note:'soft feedback', full:'Muted Pastels', dots:['#9ecdb2','#e3c48c','#dfa2b0']},
+  {id:'neon', label:'Neon High-Vis', note:'max signal', full:'Neon High-Vis', dots:['#7CFF6B','#FFF94D','#FF4D6D']},
+  {id:'mono', label:'Strict Monochrome', note:'grayscale only', full:'Strict Monochrome', dots:['#d4d4d8','#71717a','#27272a']},
+];
 
-            return `
-                ${sectionHeader('Color & Material Depth', 'Define exact rendering physics and volumetric instructions.')}
-                <div class="space-y-8">
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Primary Hex</div>
-                            <div class="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg p-2">
-                                <input type="color" value="${state.config.primaryHex}" onchange="state.config.primaryHex=this.value; render();" class="w-8 h-8 rounded cursor-pointer bg-transparent border-none outline-none" />
-                                <input type="text" value="${state.config.primaryHex}" oninput="state.config.primaryHex=this.value; render();" class="bg-transparent text-white font-mono text-sm flex-1 outline-none" />
-                            </div>
-                        </div>
-                        <div>
-                            <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Secondary / Glow Hex</div>
-                            <div class="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg p-2">
-                                <input type="color" value="${state.config.secondaryHex}" onchange="state.config.secondaryHex=this.value; render();" class="w-8 h-8 rounded cursor-pointer bg-transparent border-none outline-none" />
-                                <input type="text" value="${state.config.secondaryHex}" oninput="state.config.secondaryHex=this.value; render();" class="bg-transparent text-white font-mono text-sm flex-1 outline-none" />
-                            </div>
-                        </div>
-                    </div>
+const SURFACE_BASES = [
+  {id:'oled', label:'Pitch Black OLED', full:'Pitch Black OLED'},
+  {id:'zinc', label:'Deep Zinc', full:'Deep Zinc'},
+  {id:'navy', label:'Midnight Navy', full:'Midnight Navy'},
+];
 
-                    <div class="grid grid-cols-2 gap-6">
-                        ${miniSelect('Harmony Model', harmonies, 'harmony')}
-                        ${miniSelect('Neutral Scale', neutrals, 'neutrals')}
-                    </div>
+const SURFACE_MATERIALS = [
+  {id:'matte', label:'Opaque Matte', full:'Opaque Matte'},
+  {id:'glass', label:'Glassmorphism', note:'backdrop-blur', full:'Glassmorphism (backdrop-blur)'},
+  {id:'acrylic', label:'Saturated Acrylic', note:'heavy blur + saturate-150', full:'Saturated Acrylic (Heavy backdrop-blur + saturate-150)'},
+  {id:'ghost', label:'Wireframe / Ghost', full:'Wireframe/Ghost'},
+];
 
-                    <div class="grid grid-cols-2 gap-6">
-                        ${miniSelect('Contrast Target', contrasts, 'contrast')}
-                        ${miniSelect('Semantic States', semantics, 'semantics')}
-                    </div>
+const ELEVATIONS = [
+  {id:'ambient', label:'Soft Ambient', note:'Apple UX', full:'Soft Ambient Diffusion (Apple UX)'},
+  {id:'hard', label:'Hard Solid Offset', note:'neo-brutalism', full:'Hard Solid Offset (Neo-brutalism)'},
+  {id:'neon', label:'Colored Neon Glows', full:'Colored Neon Glows'},
+  {id:'material', label:'Strict Material', full:'Strict Material Elevation'},
+  {id:'flat', label:'Flat UI', note:'no box-shadow', full:'Flat UI (Absolutely no box-shadow properties)'},
+];
 
-                    <div class="border-t border-white/5 pt-8">
-                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-6">Material Physics</div>
-                        <div class="space-y-6">
-                            ${miniSelect('Dark Mode Surface Base', bases, 'surfaceBase')}
-                            ${miniSelect('Surface Material', materials, 'surfaceMaterial')}
-                            ${miniSelect('Elevation Paradigm', elevations, 'elevation')}
-                            ${miniSelect('Border Execution', borders, 'borders')}
-                        </div>
-                    </div>
-                </div>
-                ${stepNavigation()}
-            `;
-        }
+const BORDERS = [
+  {id:'hairline', label:'Hairline Translucent', note:'border-white/10', full:'Hairline Translucent (1px, highly transparent white borders like border-white/10)'},
+  {id:'thick', label:'Thick Structural', full:'Thick Structural'},
+  {id:'gradient', label:'Gradient Strokes', full:'Gradient Strokes'},
+  {id:'none', label:'Strictly Borderless', full:'Strictly Borderless'},
+];
 
-        // Step 4: Layout
-        function renderStep4() {
-            const navs = [
-                { value: 'island', label: 'Dynamic Island', desc: 'Floating expanding pill' },
-                { value: 'cmdk', label: 'Zero-Nav / Cmd+K', desc: 'Search palette only' },
-                { value: 'dock', label: 'Sidebar Dock', desc: 'Floating icon rail' },
-                { value: 'sticky', label: 'Sticky Glassmorphic', desc: 'Standard blurred header' }
-            ];
-            const grids = [
-                { value: 'bento', label: 'Bento Box', desc: 'Asymmetric widget grid' },
-                { value: 'split', label: '50/50 Split', desc: 'Workstation layout' },
-                { value: 'center', label: 'Center Column', desc: 'Focused reading' },
-                { value: 'dense', label: 'Dense Dashboard', desc: 'Multi-panel data' }
-            ];
+const NAVIGATIONS = [
+  {id:'island', label:'Dynamic Island', glyph:'◉', note:'floating expanding pill', full:'Apple Dynamic Island (Floating expanding pill)'},
+  {id:'cmdk', label:'Cmd+K Only', glyph:'⌘', note:'search palette', full:'Zero-Nav / Cmd+K Driven (Search palette only)'},
+  {id:'dock', label:'Icon Dock', glyph:'▤', note:'floating sidebar', full:'Floating Icon Sidebar Dock'},
+  {id:'sticky', label:'Sticky Header', glyph:'▬', note:'glassmorphic', full:'Standard Sticky Glassmorphic Header'},
+];
 
-            return `
-                ${sectionHeader('Navigation & Layout', 'Dictate the macro-structure and traversal paradigms.')}
-                <div class="space-y-8">
-                    <div>
-                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Navigation</div>
-                        ${cardGroup(navs, state.config.navigation, 'navigation')}
-                    </div>
-                    <div>
-                        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Content Grid</div>
-                        ${cardGroup(grids, state.config.grid, 'grid')}
-                    </div>
-                </div>
-                ${stepNavigation()}
-            `;
-        }
+const GRIDS = [
+  {id:'bento', label:'Bento Box', glyph:'▦', note:'asymmetric grid', full:'Asymmetric Bento Box Grid'},
+  {id:'split', label:'50/50 Split', glyph:'◫', note:'workstation', full:'50/50 Split Screen Workstation'},
+  {id:'center', label:'Center Column', glyph:'▯', note:'reading focus', full:'Center-Focused Reading Column'},
+  {id:'dense', label:'Dense Dashboard', glyph:'▩', note:'multi-panel', full:'Dense Multi-panel Dashboard'},
+];
 
-        // --- ACTIONS ---
-        function selectOption(key, value) {
-            state.config[key] = value;
-            // Trigger compatibility engine for archetype
-            if (key === 'archetype') {
-                const flavors = flavorMap[value].map(f => f.toLowerCase().split(/[ /]+/)[0]);
-                if (!flavors.includes(state.config.flavor)) {
-                    state.config.flavor = flavors[0];
-                }
-            }
-            render();
-        }
+const STEP_META = [
+  {label:'Core Stack & Audience', short:'Stack', glyph:'①'},
+  {label:'Identity & Vibe Engine', short:'Vibe', glyph:'②'},
+  {label:'Color & Material Physics', short:'Color', glyph:'③'},
+  {label:'Navigation & Layout', short:'Layout', glyph:'④'},
+];
 
-        function setStep(step) {
-            state.step = step;
-            render();
-        }
+/* ============================================================
+   STATE — in-memory only (no storage APIs)
+   ============================================================ */
+let state = {
+  step: 1,
+  config: {
+    framework:'html-css',
+    audience:'gen-z',
+    archetype:'playful',
+    flavor:'corporate',
+    emotion:'bold',
+    typography:'mono',
+    primaryHex:'#9141AC',
+    secondaryHex:'#06B6D4',
+    harmony:'complementary',
+    neutrals:'slate',
+    contrast:'subdued',
+    semantics:'pastels',
+    surfaceBase:'zinc',
+    surfaceMaterial:'acrylic',
+    elevation:'flat',
+    borders:'hairline',
+    navigation:'island',
+    grid:'dense',
+  }
+};
+let visitedMax = 1;
 
-        function nextStep() {
-            if (state.step < 4) {
-                state.step++;
-                render();
-                document.getElementById('config-container').scrollIntoView({ behavior: 'smooth' });
-            }
-        }
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $ = (sel, el) => (el||document).querySelector(sel);
+const $all = (sel, el) => Array.from((el||document).querySelectorAll(sel));
+const byId = (arr,id) => arr.find(x=>x.id===id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-        function prevStep() {
-            if (state.step > 1) {
-                state.step--;
-                render();
-                document.getElementById('config-container').scrollIntoView({ behavior: 'smooth' });
-            }
-        }
+function hexToHsl(hex){
+  let r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  let max=Math.max(r,g,b), min=Math.min(r,g,b), h,s,l=(max+min)/2;
+  if(max===min){ h=s=0; }
+  else{
+    let d=max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=(g-b)/d+(g<b?6:0); break;
+      case g: h=(b-r)/d+2; break;
+      default: h=(r-g)/d+4;
+    }
+    h/=6;
+  }
+  return [h*360, s*100, l*100];
+}
+function hslToHex(h,s,l){
+  h=((h%360)+360)%360; h/=360; s=Math.max(0,Math.min(100,s))/100; l=Math.max(0,Math.min(100,l))/100;
+  let r,g,b;
+  if(s===0){ r=g=b=l; }
+  else{
+    const hue2rgb=(p,q,t)=>{ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; };
+    const q = l<0.5 ? l*(1+s) : l+s-l*s;
+    const p = 2*l-q;
+    r=hue2rgb(p,q,h+1/3); g=hue2rgb(p,q,h); b=hue2rgb(p,q,h-1/3);
+  }
+  const toHex=x=>{ const v=Math.round(x*255).toString(16); return v.length===1?'0'+v:v; };
+  return '#'+toHex(r)+toHex(g)+toHex(b);
+}
+function hexToRgba(hex, a){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function isValidHex(h){ return /^#([0-9a-fA-F]{6})$/.test(h); }
+function harmonyPalette(hex, strategy){
+  const [h,s,l] = hexToHsl(hex);
+  if(strategy==='monochromatic') return [22,36,50,64,78].map(ll=>hslToHex(h,Math.max(s,28),ll));
+  let hues;
+  if(strategy==='analogous') hues=[h-30,h-15,h,h+15,h+30];
+  else if(strategy==='complementary') hues=[h,h+40,h+180,h+150,h+90];
+  else hues=[h,h+150,h+180,h+210,h+30];
+  return hues.map(hh=>hslToHex(hh, s, l));
+}
 
-        function generateOutput() {
-            const c = state.config;
+/* ============================================================
+   RENDER: DYNAMIC ISLAND
+   ============================================================ */
+function renderIsland(){
+  const total = STEP_META.length;
+  const pct = Math.round((state.step/total)*100);
+  $('#islandStepLabel').textContent = `STEP ${state.step}/${total}`;
+  $('#islandBarFill').style.width = pct+'%';
+  $('#islandPct').textContent = pct+'%';
+  $('#stateStep').textContent = `step ${state.step}/${total}`;
 
-            const frameworkMap = {
-                'react': 'React 19 (TSX, Functional Hooks)',
-                'svelte': 'SvelteKit 2.0 (Svelte 5 Runes)',
-                'vue': 'Vue 3 (Composition API)',
-                'html-css': 'Pure Semantic HTML5 + Custom CSS'
-            };
+  const wrap = $('#islandSteps');
+  wrap.innerHTML='';
+  STEP_META.forEach((m,i)=>{
+    const n=i+1;
+    const btn=document.createElement('button');
+    btn.className='island-step-btn'+(n===state.step?' active':'')+(n<state.step?' done':'');
+    btn.innerHTML = `<span class="island-step-num">${n<state.step?'✓':n}</span><span class="island-step-name">${esc(m.label)}</span>`;
+    btn.addEventListener('click',(e)=>{ e.stopPropagation(); goToStep(n); });
+    wrap.appendChild(btn);
+  });
+}
 
-            const audienceMap = {
-                'developers': 'Developers & Engineers (Prioritizes extreme data density and keyboard-centric navigation)',
-                'enterprise': 'Enterprise Executives (Prioritizes high-level KPI summaries and clean charts)',
-                'gen-z': 'General Consumers / Gen-Z (Prioritizes mobile-first thumb zones and gamification)',
-                'creatives': 'Creatives & Designers (Prioritizes pixel-perfect alignment and experimental layouts)'
-            };
+function toggleIsland(force){
+  const isl = $('#island');
+  const willExpand = typeof force==='boolean' ? force : !isl.classList.contains('expanded');
+  isl.classList.toggle('expanded', willExpand);
+}
 
-            const archetypeMap = {
-                'high-tech': 'High-Tech & Developer-First interface. Draw inspiration from tiling window managers, IDEs, and CLI environments. Utilize strict grid alignments, exposed structural borders, and dense monospaced telemetry data. Prioritize function, keyboard-navigability, and raw utility over decorative flourishes. The visual language should feel like a native, high-performance developer tool with visible state indicators and highly structured data panes.',
-                'corporate': 'Corporate Clean interface. Establish absolute user trust through conventional, highly predictable UX patterns. Utilize balanced, symmetrical layouts, clear visual hierarchies, and stark contrast. Components should feel robust, fully accessible, and modular. The design language must echo enterprise-grade dashboards—prioritizing clarity, compliance, and frictionless user flows over experimental aesthetics.',
-                'luxury': 'Ultra-Premium & Luxury interface. Embrace vast negative space and deliberate, editorial pacing. Use delicate hairline dividers, slow cinematic transitions, and precise, highly intentional typographic scales. The UI should feel curated, bespoke, and quiet, requiring the user to slow down and appreciate the content. Avoid overwhelming data density in favor of high-impact, singular focal points.',
-                'web3': 'Web3 & Crypto Avant-Garde interface. Push modern browser capabilities with dark-mode native aesthetics. Incorporate hardware-accelerated floating elements, deeply saturated neon glows against pitch-black canvases, and frosted glass panels. The layout should feel decentralized, cutting-edge, and highly spatial, blending complex financial data visualization with immersive, high-tech branding.',
-                'playful': 'Playful, Quirky & Approachable interface. Break the rigidity of standard grids with organic shapes, bouncy micro-interactions, and asymmetric layouts. Utilize bold, slightly exaggerated UI elements, soft geometry, and gamified feedback states. The interface should feel alive, friendly, and inherently tactile, prioritizing user delight and engagement without sacrificing core usability.',
-                'academic': 'Academic & Research-Heavy interface. Focus ruthlessly on legibility and information architecture. Draw inspiration from rigorous typesetting, LaTeX documents, and scientific journals. Utilize dense, highly structured data tables, strict center-focused reading columns, and subtle footnote/citation patterns. The design must elegantly handle massive text and data density without inducing cognitive overload.'
-            };
+function showToast(msg){
+  const t = $('#popToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>t.classList.remove('show'), 1700);
+}
 
-            const flavorMapFull = {
-                'corporate': 'Corporate Clean',
-                'modern': 'Modern App Tech',
-                'web3': 'Web3/Crypto',
-                'minimalist': 'Minimalist',
-                'academic': 'Academic',
-                'editorial': 'Editorial',
-                'high-tech': 'High-Tech',
-                'glitch': 'Glitch Art',
-                'playful': 'Playful',
-                'retro': 'Retro'
-            };
+/* ============================================================
+   RENDER: RAIL
+   ============================================================ */
+function renderRail(){
+  const rail = $('#rail');
+  rail.innerHTML='';
+  STEP_META.forEach((m,i)=>{
+    const n=i+1;
+    const btn=document.createElement('button');
+    btn.className='rail-btn'+(n===state.step?' active':'');
+    btn.setAttribute('aria-label', m.label);
+    btn.innerHTML = `<span class="rail-glyph">${m.glyph}</span><span class="rail-num">${esc(m.short.toUpperCase())}</span>`;
+    btn.addEventListener('click',()=>goToStep(n));
+    rail.appendChild(btn);
+  });
+}
 
-            const emotionMap = {
-                'stable': 'Secure & Stable',
-                'bold': 'High-Energy & Bold',
-                'calm': 'Calm & Minimal',
-                'edgy': 'Edgy & Disruptive'
-            };
+function goToStep(n){
+  const wasComplete = n>state.step;
+  state.step = n;
+  visitedMax = Math.max(visitedMax, n);
+  if(wasComplete) showToast(n<=STEP_META.length ? `✓ ${STEP_META[n-2] ? STEP_META[n-2].short+' locked in' : 'Nice pick'}` : '✓ Locked in');
+  renderAll();
+}
 
-            const typoMap = {
-                'sans': 'Modern Sans-Serif',
-                'serif': 'Elegant Serif',
-                'mono': 'Strict Monospace',
-                'mixed': 'Mixed (Serif headers, Sans body)'
-            };
+/* ============================================================
+   OPTION CARD BUILDERS
+   ============================================================ */
+function makeCard(item, key, opts){
+  opts = opts||{};
+  const selected = state.config[key]===item.id;
+  const card=document.createElement('button');
+  card.type='button';
+  card.className='card'+(opts.big?' big':'')+(selected?' selected':'');
+  card.setAttribute('aria-pressed', selected);
+  card.innerHTML = `
+    <div class="card-top">
+      <span class="card-glyph">${item.glyph||'▪'}</span>
+      <span class="card-check">${selected?'✓':''}</span>
+    </div>
+    <span class="card-label">${esc(item.label)}</span>
+    ${(opts.big && item.full) ? `<span class="card-note">${esc(item.full)}</span>` : (item.note ? `<span class="card-note">${esc(item.note)}</span>` : '')}
+  `;
+  card.addEventListener('click', ()=>{
+    state.config[key]=item.id;
+    if(opts.onSet) opts.onSet();
+    renderAll();
+  });
+  return card;
+}
 
-            const harmonyMap = { 'monochromatic': 'Monochromatic', 'analogous': 'Analogous', 'complementary': 'Complementary', 'split': 'Split-Complementary' };
-            const neutralsMap = { 'slate': 'Slate (Cool, blue-tinted grays)', 'zinc': 'Zinc (Standard Tech)', 'neutral': 'Neutral (Pure Grayscale)', 'stone': 'Stone (Warm/Earthy)' };
-            const contrastMap = { 'aa': 'WCAG AA (4.5:1)', 'aaa': 'WCAG AAA (7:1)', 'edge': 'High Contrast Edge Mode', 'subdued': 'Aesthetic Subdued' };
-            const semanticsMap = { 'vivid': 'Vivid Standard (R/G/Y)', 'pastels': 'Muted Pastels', 'neon': 'Neon High-Vis', 'mono': 'Strict Monochrome' };
-            const surfaceBaseMap = { 'oled': 'Pitch Black OLED', 'zinc': 'Deep Zinc', 'navy': 'Midnight Navy' };
-            const materialMap = { 'matte': 'Opaque Matte', 'glass': 'Glassmorphism (backdrop-blur)', 'acrylic': 'Saturated Acrylic (Heavy backdrop-blur + saturate-150)', 'ghost': 'Wireframe/Ghost' };
-            const elevationMap = { 'ambient': 'Soft Ambient Diffusion (Apple UX)', 'hard': 'Hard Solid Offset (Neo-brutalism)', 'neon': 'Colored Neon Glows', 'material': 'Strict Material Elevation', 'flat': 'Flat UI (Absolutely no box-shadow properties)' };
-            const bordersMap = { 'hairline': 'Hairline Translucent (1px, highly transparent white borders like border-white/10)', 'thick': 'Thick Structural', 'gradient': 'Gradient Strokes', 'none': 'Strictly Borderless' };
-            const navMap = { 'island': 'Apple Dynamic Island (Floating expanding pill)', 'cmdk': 'Zero-Nav / Cmd+K Driven (Search palette only)', 'dock': 'Floating Icon Sidebar Dock', 'sticky': 'Standard Sticky Glassmorphic Header' };
-            const gridMap = { 'bento': 'Asymmetric Bento Box Grid', 'split': '50/50 Split Screen Workstation', 'center': 'Center-Focused Reading Column', 'dense': 'Dense Multi-panel Dashboard' };
+function makeChip(item, key, opts){
+  opts=opts||{};
+  const selected = state.config[key]===item.id;
+  const locked = opts.allowed && !opts.allowed.includes(item.id);
+  const chip=document.createElement('button');
+  chip.type='button';
+  chip.className='chip'+(selected?' selected':'')+(locked?' locked':'');
+  chip.textContent=item.label;
+  chip.disabled=!!locked;
+  chip.setAttribute('aria-pressed', selected);
+  chip.addEventListener('click', ()=>{
+    if(locked) return;
+    state.config[key]=item.id;
+    renderAll();
+  });
+  return chip;
+}
 
-            const markdown = `<system_role>
+function fieldBlock(labelText, contentEl){
+  const wrap=document.createElement('div');
+  wrap.className='field-block';
+  const lab=document.createElement('div');
+  lab.className='field-label';
+  lab.textContent=labelText;
+  wrap.appendChild(lab);
+  wrap.appendChild(contentEl);
+  return wrap;
+}
+
+/* ============================================================
+   STEP RENDERERS
+   ============================================================ */
+function renderStep1(stage){
+  const head=document.createElement('div');
+  head.className='stage-head';
+  head.innerHTML = `<p class="stage-eyebrow">Step 1 / Core Stack</p>
+    <h2 class="stage-title">Core Stack &amp; Audience</h2>
+    <p class="stage-sub">Pick the framework the generated component ships in, and who it's actually for.</p>`;
+  stage.appendChild(head);
+
+  const fwGrid=document.createElement('div'); fwGrid.className='card-grid';
+  FRAMEWORKS.forEach(f=>fwGrid.appendChild(makeCard(f,'framework')));
+  stage.appendChild(fieldBlock('Framework', fwGrid));
+
+  const audGrid=document.createElement('div'); audGrid.className='card-grid wide';
+  AUDIENCES.forEach(a=>audGrid.appendChild(makeCard(a,'audience',{big:true})));
+  stage.appendChild(fieldBlock('Target Audience', audGrid));
+
+  stage.appendChild(navRow(1));
+}
+
+function renderStep2(stage){
+  const head=document.createElement('div');
+  head.className='stage-head';
+  head.innerHTML = `<p class="stage-eyebrow">Step 2 / Vibe Engine</p>
+    <h2 class="stage-title">Identity &amp; Vibe Engine</h2>
+    <p class="stage-sub">Choose a base archetype, then blend in a second flavor for creative tension.</p>`;
+  stage.appendChild(head);
+
+  const archGrid=document.createElement('div'); archGrid.className='card-grid wide';
+  ARCHETYPES.forEach(a=>archGrid.appendChild(makeCard(a,'archetype',{big:false, onSet:()=>{
+    const allowed = FLAVOR_COMPAT[state.config.archetype]||[];
+    if(!allowed.includes(state.config.flavor)) state.config.flavor = allowed[0];
+  }})));
+  stage.appendChild(fieldBlock('Base Archetype', archGrid));
+
+  const activeArch = byId(ARCHETYPES, state.config.archetype);
+  const detail=document.createElement('div');
+  detail.className='archetype-detail';
+  detail.innerHTML = `<b>${esc(activeArch.label)} —</b> ${esc(activeArch.full)}`;
+  stage.appendChild(detail);
+
+  const allowed = FLAVOR_COMPAT[state.config.archetype]||FLAVORS.map(f=>f.id);
+  const flavRow=document.createElement('div'); flavRow.className='chip-row';
+  FLAVORS.forEach(f=>flavRow.appendChild(makeChip(f,'flavor',{allowed})));
+  stage.appendChild(fieldBlock('Flavor Mix · compatible with '+activeArch.label, flavRow));
+
+  const emoGrid=document.createElement('div'); emoGrid.className='card-grid tight';
+  EMOTIONS.forEach(e=>emoGrid.appendChild(makeCard(e,'emotion')));
+  stage.appendChild(fieldBlock('Core Emotion', emoGrid));
+
+  const typGrid=document.createElement('div'); typGrid.className='card-grid tight';
+  TYPOGRAPHIES.forEach(t=>typGrid.appendChild(makeCard(t,'typography')));
+  stage.appendChild(fieldBlock('Typography Strategy', typGrid));
+
+  stage.appendChild(navRow(2));
+}
+
+function renderStep3(stage){
+  const head=document.createElement('div');
+  head.className='stage-head';
+  head.innerHTML = `<p class="stage-eyebrow">Step 3 / Color Engine</p>
+    <h2 class="stage-title">Color Engine &amp; Material Physics</h2>
+    <p class="stage-sub">Set the palette root, then tune how light, depth and surfaces behave.</p>`;
+  stage.appendChild(head);
+
+  // colors
+  const colorRow=document.createElement('div'); colorRow.className='color-row';
+  colorRow.appendChild(colorField('Primary', 'primaryHex'));
+  colorRow.appendChild(colorField('Secondary / Glow', 'secondaryHex'));
+  stage.appendChild(fieldBlock('Palette Root', colorRow));
+
+  // harmony + live preview
+  const harmWrap=document.createElement('div');
+  const harmRow=document.createElement('div'); harmRow.className='chip-row';
+  HARMONIES.forEach(h=>harmRow.appendChild(makeChip(h,'harmony')));
+  harmWrap.appendChild(harmRow);
+  const strip=document.createElement('div'); strip.className='preview-strip'; strip.style.marginTop='10px';
+  harmonyPalette(isValidHex(state.config.primaryHex)?state.config.primaryHex:'#9141AC', state.config.harmony).forEach(c=>{
+    const d=document.createElement('div'); d.style.background=c; strip.appendChild(d);
+  });
+  harmWrap.appendChild(strip);
+  stage.appendChild(fieldBlock('Harmony Strategy', harmWrap));
+
+  // neutrals + ramp
+  const neuWrap=document.createElement('div');
+  const neuRow=document.createElement('div'); neuRow.className='chip-row';
+  NEUTRALS.forEach(n=>neuRow.appendChild(makeChip(n,'neutrals')));
+  neuWrap.appendChild(neuRow);
+  const ramp=document.createElement('div'); ramp.className='gray-ramp'; ramp.style.marginTop='10px';
+  byId(NEUTRALS,state.config.neutrals).ramp.forEach(c=>{ const d=document.createElement('div'); d.style.background=c; ramp.appendChild(d); });
+  neuWrap.appendChild(ramp);
+  stage.appendChild(fieldBlock('Neutral / Grayscale Scale', neuWrap));
+
+  // contrast
+  const conRow=document.createElement('div'); conRow.className='chip-row';
+  CONTRASTS.forEach(c=>conRow.appendChild(makeChip(c,'contrast')));
+  stage.appendChild(fieldBlock('Accessibility Target', conRow));
+
+  // semantics + dots
+  const semWrap=document.createElement('div');
+  const semRow=document.createElement('div'); semRow.className='chip-row';
+  SEMANTICS.forEach(s=>semRow.appendChild(makeChip(s,'semantics')));
+  semWrap.appendChild(semRow);
+  const dotRow=document.createElement('div'); dotRow.className='dot-row'; dotRow.style.marginTop='10px';
+  byId(SEMANTICS,state.config.semantics).dots.forEach((c,i)=>{
+    const d=document.createElement('span'); d.className='dot'; d.style.background=c; dotRow.appendChild(d);
+  });
+  dotRow.insertAdjacentHTML('beforeend','<span class="dot-label">success · warning · error</span>');
+  semWrap.appendChild(dotRow);
+  stage.appendChild(fieldBlock('Semantic States (Feedback)', semWrap));
+
+  // surface base
+  const sbRow=document.createElement('div'); sbRow.className='chip-row';
+  SURFACE_BASES.forEach(s=>sbRow.appendChild(makeChip(s,'surfaceBase')));
+  stage.appendChild(fieldBlock('Dark Mode Surface Root', sbRow));
+
+  // surface material
+  const smRow=document.createElement('div'); smRow.className='chip-row';
+  SURFACE_MATERIALS.forEach(s=>smRow.appendChild(makeChip(s,'surfaceMaterial')));
+  stage.appendChild(fieldBlock('Surface Material & Textures', smRow));
+
+  // elevation
+  const elRow=document.createElement('div'); elRow.className='chip-row';
+  ELEVATIONS.forEach(e=>elRow.appendChild(makeChip(e,'elevation')));
+  stage.appendChild(fieldBlock('Shadow & Elevation Paradigm', elRow));
+
+  // borders
+  const bdRow=document.createElement('div'); bdRow.className='chip-row';
+  BORDERS.forEach(b=>bdRow.appendChild(makeChip(b,'borders')));
+  stage.appendChild(fieldBlock('Border Execution Strategy', bdRow));
+
+  stage.appendChild(navRow(3));
+}
+
+function colorField(label, key){
+  const wrap=document.createElement('div'); wrap.className='color-field';
+  const top=document.createElement('div'); top.className='color-field-top';
+  const swatchWrap=document.createElement('div'); swatchWrap.className='swatch-wrap';
+  const colorInput=document.createElement('input');
+  colorInput.type='color';
+  colorInput.value=isValidHex(state.config[key])?state.config[key]:'#9141AC';
+  swatchWrap.appendChild(colorInput);
+  const hexInput=document.createElement('input');
+  hexInput.type='text'; hexInput.className='hex-input'; hexInput.value=state.config[key];
+  hexInput.maxLength=7;
+  top.appendChild(swatchWrap); top.appendChild(hexInput);
+  wrap.appendChild(top);
+
+  const strip=document.createElement('div'); strip.className='opacity-strip';
+  const stops=[10,20,40,60,80,100];
+  stops.forEach(op=>{ const d=document.createElement('div'); d.style.background=hexToRgba(isValidHex(state.config[key])?state.config[key]:'#9141AC', op/100); strip.appendChild(d); });
+  wrap.appendChild(strip);
+  const caption=document.createElement('div'); caption.className='opacity-caption';
+  caption.innerHTML = `<span>/10</span><span>/20</span><span>/40</span><span>/60</span><span>/80</span><span>/100</span>`;
+  wrap.appendChild(caption);
+
+  const labelEl=document.createElement('div');
+  labelEl.style.cssText='font-size:10.5px;color:var(--text-low);margin-top:2px;';
+  labelEl.textContent = label+' · bg-['+state.config[key]+']/20';
+  wrap.appendChild(labelEl);
+
+  function commit(v){
+    if(isValidHex(v)){ state.config[key]=v.toUpperCase(); renderAll(); }
+  }
+  colorInput.addEventListener('input', e=>commit(e.target.value));
+  hexInput.addEventListener('change', e=>{
+    let v=e.target.value.trim();
+    if(v[0]!=='#') v='#'+v;
+    commit(v);
+  });
+  return wrap;
+}
+
+function renderStep4(stage){
+  const head=document.createElement('div');
+  head.className='stage-head';
+  head.innerHTML = `<p class="stage-eyebrow">Step 4 / Layout</p>
+    <h2 class="stage-title">Navigation &amp; Layout</h2>
+    <p class="stage-sub">Lock in how people move through the interface, and how content is arranged.</p>`;
+  stage.appendChild(head);
+
+  const navGrid=document.createElement('div'); navGrid.className='card-grid wide';
+  NAVIGATIONS.forEach(n=>navGrid.appendChild(makeCard(n,'navigation',{big:true})));
+  stage.appendChild(fieldBlock('Navigational Architecture', navGrid));
+
+  const gridGrid=document.createElement('div'); gridGrid.className='card-grid wide';
+  GRIDS.forEach(g=>gridGrid.appendChild(makeCard(g,'grid',{big:true})));
+  stage.appendChild(fieldBlock('Content Grid Strategy', gridGrid));
+
+  const cta=document.createElement('div'); cta.className='cta-row';
+  const btn=document.createElement('button'); btn.className='btn btn-primary'; btn.textContent='⚡ COMPILE PROMPT';
+  btn.addEventListener('click', ()=>{
+    burstConfetti();
+    showToast('✓ Prompt compiled — ready to copy');
+    $('#promptOut').closest('.panel').scrollIntoView({behavior:'smooth', block:'center'});
+  });
+  cta.appendChild(btn);
+  const hint=document.createElement('span'); hint.className='step-hint'; hint.textContent='Your prompt is already live in the panel on the right →';
+  cta.appendChild(hint);
+  stage.appendChild(cta);
+
+  stage.appendChild(navRow(4, true));
+}
+
+function navRow(n, isLast){
+  const row=document.createElement('div'); row.className='cta-row';
+  if(n>1){
+    const back=document.createElement('button'); back.className='btn btn-ghost'; back.textContent='← BACK';
+    back.addEventListener('click', ()=>goToStep(n-1));
+    row.appendChild(back);
+  }
+  if(!isLast){
+    const next=document.createElement('button'); next.className='btn btn-primary'; next.textContent='NEXT →';
+    next.addEventListener('click', ()=>goToStep(n+1));
+    row.appendChild(next);
+  }
+  return row;
+}
+
+function burstConfetti(){
+  const colors=[state.config.primaryHex, state.config.secondaryHex, '#9ecdb2'];
+  for(let i=0;i<14;i++){
+    const p=document.createElement('span');
+    const size = 5+Math.random()*4;
+    p.style.cssText=`position:fixed; left:50%; top:70px; width:${size}px; height:${size}px; border-radius:3px; background:${colors[i%colors.length]}; z-index:80; pointer-events:none; transition:transform 1s cubic-bezier(.22,.61,.36,1), opacity 1s ease;`;
+    document.body.appendChild(p);
+    const dx=(Math.random()-0.5)*260, dy= 60+Math.random()*180, rot=(Math.random()-0.5)*360;
+    requestAnimationFrame(()=>{
+      p.style.transform=`translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+      p.style.opacity='0';
+    });
+    setTimeout(()=>p.remove(), 1050);
+  }
+}
+
+/* ============================================================
+   PROMPT BUILDER
+   ============================================================ */
+function buildPrompt(cfg){
+  const fw=byId(FRAMEWORKS,cfg.framework), aud=byId(AUDIENCES,cfg.audience), arch=byId(ARCHETYPES,cfg.archetype),
+        flav=byId(FLAVORS,cfg.flavor), emo=byId(EMOTIONS,cfg.emotion), typ=byId(TYPOGRAPHIES,cfg.typography),
+        harm=byId(HARMONIES,cfg.harmony), neu=byId(NEUTRALS,cfg.neutrals), con=byId(CONTRASTS,cfg.contrast),
+        sem=byId(SEMANTICS,cfg.semantics), sb=byId(SURFACE_BASES,cfg.surfaceBase), sm=byId(SURFACE_MATERIALS,cfg.surfaceMaterial),
+        el=byId(ELEVATIONS,cfg.elevation), bd=byId(BORDERS,cfg.borders), nav=byId(NAVIGATIONS,cfg.navigation), gr=byId(GRIDS,cfg.grid);
+
+  return `<system_role>
 You are an Elite UI/UX Architect and Staff-level Frontend Developer. Generate a production-ready, highly polished web component adhering strictly to the volumetric design tokens below. Do not hallucinate external assets.
 </system_role>
 
 ### 1. IDENTITY & PERSONA
-- Base Visual Archetype: ${archetypeMap[c.archetype]}
-- Flavor Injection: Blend in subtle elements of "${flavorMapFull[c.flavor]}".
-- Core Emotional Resonance: ${emotionMap[c.emotion]}
-- Target Audience Profile: ${audienceMap[c.audience]}
-- Typography Strategy: ${typoMap[c.typography]}
+- Base Visual Archetype: ${arch.full}
+- Flavor Injection: Blend in subtle elements of "${flav.label}".
+- Core Emotional Resonance: ${emo.label}
+- Target Audience Profile: ${aud.full}
+- Typography Strategy: ${typ.label}
 
 ### 2. COLOR ENGINE & HARMONY
-- Palette Root: Primary: ${c.primaryHex} | Secondary/Glow: ${c.secondaryHex}
-- Harmony Strategy: ${harmonyMap[c.harmony]}
-- Neutral/Grayscale Scale: ${neutralsMap[c.neutrals]}
-- Semantic States (Feedback): ${semanticsMap[c.semantics]}
-- Accessibility Target: ${contrastMap[c.contrast]}
+- Palette Root: Primary: ${cfg.primaryHex} | Secondary/Glow: ${cfg.secondaryHex}
+- Harmony Strategy: ${harm.label}
+- Neutral/Grayscale Scale: ${neu.full}
+- Semantic States (Feedback): ${sem.full}
+- Accessibility Target: ${con.full}
 
-> Constraint: Extrapolate opacities and hover states natively using Tailwind arbitrary values based on the exact hex codes provided (e.g., bg-[${c.primaryHex}]/20).
+> Constraint: Extrapolate opacities and hover states natively using Tailwind arbitrary values based on the exact hex codes provided (e.g., bg-[${cfg.primaryHex}]/20).
 
 ### 3. MATERIAL PHYSICS & DEPTH ELEVATION
-- Dark Mode Surface Root: ${surfaceBaseMap[c.surfaceBase]}
-- Surface Material & Textures: ${materialMap[c.surfaceMaterial]}
-- Shadow & Elevation Paradigm: ${elevationMap[c.elevation]}
-- Border Execution Strategy: ${bordersMap[c.borders]}
+- Dark Mode Surface Root: ${sb.full}
+- Surface Material & Textures: ${sm.full}
+- Shadow & Elevation Paradigm: ${el.full}
+- Border Execution Strategy: ${bd.full}
 
 > Constraint: Execute the shadow and border constraints strictly. If "Flat UI" or "Borderless" is requested, rely entirely on padding and background tint shifts for component hierarchy.
 
 ### 4. LAYOUT & TECHNICAL SPECS
-- Framework: ${frameworkMap[c.framework]}
-- Navigational Architecture: ${navMap[c.navigation]}
-- Content Grid Strategy: ${gridMap[c.grid]}
+- Framework: ${fw.full}
+- Navigational Architecture: ${nav.full}
+- Content Grid Strategy: ${gr.full}
 - Interactivity: Embed realistic client-side mock state logic so the UI is interactive.
 - Output: A single-file implementation inside a markdown code block.`;
+}
 
-            document.getElementById('output-content').textContent = markdown;
-            document.getElementById('output-overlay').classList.remove('hidden');
-            document.getElementById('output-overlay').classList.add('flex');
-        }
+function renderPromptText(text){
+  const pre = $('#promptOut');
+  pre.innerHTML='';
+  text.split('\n').forEach(line=>{
+    const div=document.createElement('div');
+    let cls='line-plain';
+    if(/^<\/?system_role>/.test(line)) cls='line-tag';
+    else if(/^###/.test(line)) cls='line-head';
+    else if(/^>/.test(line)) cls='line-note';
+    else if(/^- [^:]+:/.test(line)){
+      const idx=line.indexOf(':');
+      const keySpan=`<span class="line-key">${esc(line.slice(0,idx+1))}</span>`;
+      const valSpan=`<span class="line-val">${esc(line.slice(idx+1))}</span>`;
+      div.innerHTML = keySpan+valSpan;
+      pre.appendChild(div);
+      return;
+    }
+    div.className=cls;
+    div.textContent=line || '\u00A0';
+    pre.appendChild(div);
+  });
+}
 
-        function closeOutput() {
-            document.getElementById('output-overlay').classList.add('hidden');
-            document.getElementById('output-overlay').classList.remove('flex');
-        }
+/* ============================================================
+   STATE JSON PANEL
+   ============================================================ */
+function syntaxHighlightJSON(json){
+  json = esc(json);
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match){
+    let cls='jnum';
+    if(/^"/.test(match)) cls = /:$/.test(match) ? 'jkey' : 'jstr';
+    else if(/true|false/.test(match)) cls='jbool';
+    else if(/null/.test(match)) cls='jnull';
+    return '<span class="'+cls+'">'+match+'</span>';
+  });
+}
+function renderStateJson(){
+  const json = JSON.stringify(state, null, 2);
+  $('#stateJson').innerHTML = syntaxHighlightJSON(json);
+}
 
-        function copyOutput() {
-            const text = document.getElementById('output-content').textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copy-btn');
-                btn.textContent = 'Copied!';
-                setTimeout(() => { btn.textContent = 'Copy Markdown'; }, 2000);
-            });
-        }
+/* ============================================================
+   MASTER RENDER
+   ============================================================ */
+function renderStage(){
+  const stage=$('#stage');
+  stage.innerHTML='';
+  if(state.step===1) renderStep1(stage);
+  else if(state.step===2) renderStep2(stage);
+  else if(state.step===3) renderStep3(stage);
+  else renderStep4(stage);
+}
 
-        // Initial Render
-        render();
-    </script>
+function renderAll(){
+  renderIsland();
+  renderRail();
+  renderStage();
+  renderStateJson();
+  const promptText = buildPrompt(state.config);
+  renderPromptText(promptText);
+  $('#promptChars').textContent = promptText.length+' chars';
+  window.__currentPrompt = promptText;
+}
+
+/* ============================================================
+   GLOBAL EVENTS
+   ============================================================ */
+$('#island').addEventListener('click', ()=>toggleIsland());
+$('#island').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleIsland(); } });
+document.addEventListener('click', (e)=>{
+  const isl=$('#island');
+  if(isl.classList.contains('expanded') && !isl.contains(e.target)) isl.classList.remove('expanded');
+});
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') $('#island').classList.remove('expanded'); });
+
+$('#copyBtn').addEventListener('click', async ()=>{
+  const text = window.__currentPrompt || '';
+  const btn = $('#copyBtn');
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(err){
+    const ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e2){}
+    ta.remove();
+  }
+  const original = btn.textContent;
+  btn.textContent='✓ COPIED';
+  btn.classList.add('copied');
+  setTimeout(()=>{ btn.textContent=original; btn.classList.remove('copied'); }, 1600);
+});
+
+/* init */
+renderAll();
+})();
+</script>
 </body>
 </html>
